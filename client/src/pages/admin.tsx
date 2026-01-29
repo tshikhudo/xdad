@@ -44,6 +44,7 @@ export default function AdminDashboard() {
     area: "",
   });
   const [jobToRate, setJobToRate] = useState<Job | null>(null);
+  const [jobToEditRating, setJobToEditRating] = useState<Job | null>(null);
   const [selectedRating, setSelectedRating] = useState(5);
   const [workerDocuments, setWorkerDocuments] = useState<string[]>([]);
   const [workerPhoto, setWorkerPhoto] = useState<string | null>(null);
@@ -164,6 +165,27 @@ export default function AdminDashboard() {
   const handleCompleteWithRating = () => {
     if (jobToRate) {
       completeJobMutation.mutate({ id: jobToRate.id, rating: selectedRating });
+    }
+  };
+
+  const updateRatingMutation = useMutation({
+    mutationFn: async ({ id, rating }: { id: string; rating: number }) => {
+      return apiRequest("PATCH", `/api/jobs/${id}`, { 
+        employerRating: rating,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      setJobToEditRating(null);
+      setSelectedRating(5);
+      toast({ title: t("common.success") });
+    },
+  });
+
+  const handleUpdateRating = () => {
+    if (jobToEditRating) {
+      updateRatingMutation.mutate({ id: jobToEditRating.id, rating: selectedRating });
     }
   };
 
@@ -565,19 +587,34 @@ export default function AdminDashboard() {
                     <div className="space-y-3">
                       {completedJobs.slice(0, 5).map((job) => (
                         <Card key={job.id} className="p-4">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <div className="text-sm font-medium">{job.tasks.map(task => t(`task.${task}`)).join(", ")}</div>
+                          <div className="flex justify-between items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium truncate">{job.tasks.map(task => t(`task.${task}`)).join(", ")}</div>
                               <div className="text-sm text-muted-foreground">{job.date} • {job.area}</div>
                             </div>
-                            <div className="text-right">
-                              <div className="font-medium">R{job.price}</div>
-                              {job.employerRating && (
-                                <div className="flex items-center gap-1">
-                                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                                  <span className="text-sm">{job.employerRating}</span>
-                                </div>
-                              )}
+                            <div className="flex items-center gap-2">
+                              <div className="text-right">
+                                <div className="font-medium">R{job.price}</div>
+                                {job.employerRating ? (
+                                  <div className="flex items-center gap-1">
+                                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                    <span className="text-sm">{job.employerRating}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">{t("admin.noRating")}</span>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setJobToEditRating(job);
+                                  setSelectedRating(job.employerRating || 5);
+                                }}
+                                data-testid={`button-edit-rating-${job.id}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
                         </Card>
@@ -872,6 +909,27 @@ export default function AdminDashboard() {
               </div>
 
               <div>
+                <Label>{t("admin.workerRating")}</Label>
+                <div className="flex items-center gap-2 mt-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Button
+                      key={star}
+                      type="button"
+                      variant={(editingWorker.rating || 0) >= star ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => setEditingWorker({ ...editingWorker, rating: star })}
+                      data-testid={`button-worker-rating-${star}`}
+                    >
+                      <Star className={`h-4 w-4 ${(editingWorker.rating || 0) >= star ? "fill-current" : ""}`} />
+                    </Button>
+                  ))}
+                  <span className="text-sm text-muted-foreground ml-2">
+                    {editingWorker.rating || 0} / 5
+                  </span>
+                </div>
+              </div>
+
+              <div>
                 <Label>{t("admin.documents")}</Label>
                 <div className="mt-2 space-y-2">
                   {workerDocuments.length > 0 && (
@@ -1080,6 +1138,40 @@ export default function AdminDashboard() {
             <Button onClick={handleCompleteWithRating} disabled={completeJobMutation.isPending} data-testid="button-confirm-complete">
               {completeJobMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {t("admin.completeJob")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!jobToEditRating} onOpenChange={(open) => !open && setJobToEditRating(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("admin.editRating")}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">{t("admin.rateJobDesc")}</p>
+            <div className="flex justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <Button
+                  key={rating}
+                  variant={selectedRating >= rating ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setSelectedRating(rating)}
+                  data-testid={`button-edit-rating-star-${rating}`}
+                >
+                  <Star className={`h-5 w-5 ${selectedRating >= rating ? "fill-current" : ""}`} />
+                </Button>
+              ))}
+            </div>
+            <p className="text-center mt-2 font-semibold">{selectedRating} / 5</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setJobToEditRating(null)}>
+              {t("book.back")}
+            </Button>
+            <Button onClick={handleUpdateRating} disabled={updateRatingMutation.isPending} data-testid="button-save-rating">
+              {updateRatingMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {t("admin.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
