@@ -29,6 +29,7 @@ export interface IStorage {
   // Employers
   getEmployers(): Promise<Employer[]>;
   getEmployer(id: string): Promise<Employer | undefined>;
+  getEmployerByPhone(phone: string): Promise<Employer | undefined>;
   createEmployer(employer: InsertEmployer): Promise<Employer>;
   updateEmployer(id: string, data: Partial<Employer>): Promise<Employer | undefined>;
 
@@ -422,6 +423,15 @@ export class MemStorage implements IStorage {
 
   async getEmployer(id: string): Promise<Employer | undefined> {
     return this.employers.get(id);
+  }
+
+  async getEmployerByPhone(phone: string): Promise<Employer | undefined> {
+    for (const employer of this.employers.values()) {
+      if (employer.phone === phone) {
+        return employer;
+      }
+    }
+    return undefined;
   }
 
   async createEmployer(insertEmployer: InsertEmployer): Promise<Employer> {

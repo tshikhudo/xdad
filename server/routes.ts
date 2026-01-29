@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { calculatePrice, HOUSE_SIZES, TASKS, AVAILABILITY_WINDOWS } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { registerWhatsAppRoutes } from "./whatsapp";
 
 const createWorkerSchema = z.object({
   name: z.string().min(1),
@@ -81,6 +82,9 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
+  
+  // Register WhatsApp webhook routes
+  registerWhatsAppRoutes(app);
 
   // Pricing endpoint - calculate price for employer
   app.post("/api/pricing/calculate", async (req, res) => {

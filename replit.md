@@ -104,3 +104,16 @@ The storage layer uses an interface pattern (`IStorage`) that allows swapping be
 ### Form Handling
 - **react-hook-form**: Form state management
 - **@hookform/resolvers**: Zod integration for form validation
+
+### WhatsApp Integration (Twilio)
+- **Twilio SDK**: For sending/receiving WhatsApp messages
+- **Webhook endpoint**: `/api/whatsapp/webhook` receives incoming messages
+- **Conversational booking**: Users text the WhatsApp number to book, guided through house size → tasks → time → date → area → confirm flow
+- **Environment variables needed**: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_NUMBER`
+- **Test endpoint**: `/api/whatsapp/test` for simulating conversations without Twilio
+- **Status endpoint**: `/api/whatsapp/status` to check if Twilio is configured
+
+### Object Storage
+- **Replit Object Storage**: For document uploads (worker ID documents, photos)
+- **Upload hook**: `client/src/hooks/use-upload.ts` handles presigned URL upload flow
+- **Routes**: `/api/storage/upload-url` for requesting upload URLs, `/objects/*` for serving files
