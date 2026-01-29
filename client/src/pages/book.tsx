@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, Home, Sparkles, Flame, Shirt, Square, Calendar, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Home, Sparkles, Flame, Shirt, Square, Calendar as CalendarIcon, Clock, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +44,8 @@ export default function Book() {
     area: "",
   });
   const [price, setPrice] = useState<number>(0);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(undefined);
 
   // Fetch pricing rules from server
   const { data: pricingRules } = useQuery<PricingRule>({
@@ -91,11 +95,24 @@ export default function Book() {
     },
   });
 
+  const todayValue = new Date().toISOString().split("T")[0];
+  const tomorrowValue = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+  
   const dates = [
-    { key: "today", label: t("common.today"), value: new Date().toISOString().split("T")[0] },
-    { key: "tomorrow", label: t("common.tomorrow"), value: new Date(Date.now() + 86400000).toISOString().split("T")[0] },
-    { key: "week", label: t("common.thisWeek"), value: new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0] },
+    { key: "today", label: t("common.today"), value: todayValue },
+    { key: "tomorrow", label: t("common.tomorrow"), value: tomorrowValue },
   ];
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedCalendarDate(date);
+      const dateValue = date.toISOString().split("T")[0];
+      setBooking(prev => ({ ...prev, date: dateValue }));
+      setShowCalendar(false);
+    }
+  };
+
+  const isCustomDate = booking.date && booking.date !== todayValue && booking.date !== tomorrowValue;
 
   const steps: BookingStep[] = ["houseSize", "tasks", "window", "date", "area", "review"];
   const currentIndex = steps.indexOf(step);
@@ -331,7 +348,7 @@ export default function Book() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Calendar className="w-6 h-6 text-primary" />
+                        <CalendarIcon className="w-6 h-6 text-primary" />
                       </div>
                       <div>
                         <h3 className="font-semibold">{date.label}</h3>
@@ -344,7 +361,51 @@ export default function Book() {
                   </div>
                 </Card>
               ))}
+              
+              <Card
+                data-testid="card-date-choose"
+                className={`p-5 cursor-pointer transition-all hover-elevate ${
+                  isCustomDate
+                    ? "ring-2 ring-primary bg-primary/5"
+                    : ""
+                }`}
+                onClick={() => setShowCalendar(true)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <CalendarIcon className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">{t("book.chooseDate")}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {isCustomDate ? booking.date : t("book.pickFromCalendar")}
+                      </p>
+                    </div>
+                  </div>
+                  {isCustomDate && (
+                    <Check className="w-6 h-6 text-primary" />
+                  )}
+                </div>
+              </Card>
             </div>
+
+            <Dialog open={showCalendar} onOpenChange={setShowCalendar}>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>{t("book.chooseDate")}</DialogTitle>
+                </DialogHeader>
+                <div className="flex justify-center py-4">
+                  <Calendar
+                    mode="single"
+                    selected={selectedCalendarDate}
+                    onSelect={handleCalendarSelect}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    className="rounded-md border"
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
