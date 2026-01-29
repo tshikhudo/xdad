@@ -17,6 +17,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.admin": "Admin",
     "nav.book": "Book Now",
 
+    "contact.defaultMessage": "Hi Ray, I'm interested in MaidSync services.",
+
     "home.tagline": "Professional cleaning, simple pricing",
     "home.subtitle": "Tell us your house size, pick your tasks, and pay one clear price",
     "home.howItWorks": "How it Works",
@@ -156,6 +158,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.profile": "Iphrofayela Yami",
     "nav.admin": "Umlawuli",
     "nav.book": "Bhukha Manje",
+
+    "contact.defaultMessage": "Sawubona Ray, ngithanda izinsizakalo ze-MaidSync.",
 
     "home.tagline": "Ukuhlanza okuhle, intengo elula",
     "home.subtitle": "Sitshele ubukhulu bendlu yakho, ukhethe imisebenzi, ukhokhe intengo eyodwa ecacile",
@@ -297,6 +301,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.admin": "Molaodi",
     "nav.book": "Buka Hona Joale",
 
+    "contact.defaultMessage": "Lumela Ray, ke thahasella litšebeletso tsa MaidSync.",
+
     "home.tagline": "Ho hlatsoa ho hloekileng, theko e bonolo",
     "home.subtitle": "Re bolelle boholo ba ntlo ya hao, khetha mesebetsi, lefa theko e le nngwe e hlakileng",
     "home.howItWorks": "E Sebetsa Joang",
@@ -436,6 +442,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.profile": "My Profiel",
     "nav.admin": "Admin",
     "nav.book": "Bespreek Nou",
+
+    "contact.defaultMessage": "Hallo Ray, ek stel belang in MaidSync dienste.",
 
     "home.tagline": "Professionele skoonmaak, eenvoudige pryse",
     "home.subtitle": "Vertel ons jou huisgrootte, kies jou take, en betaal een duidelike prys",

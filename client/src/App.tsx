@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/components/i18n-provider";
 import { BottomNav } from "@/components/bottom-nav";
+import { ContactButton } from "@/components/contact-button";
 import Home from "@/pages/home";
 import Book from "@/pages/book";
 import WorkerProfile from "@/pages/worker";
@@ -30,6 +31,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-background">
       <Router />
+      <ContactButton />
       {!hideBottomNav && <BottomNav />}
     </div>
   );
