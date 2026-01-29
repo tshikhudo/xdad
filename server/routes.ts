@@ -3,11 +3,13 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { calculatePrice, HOUSE_SIZES, TASKS, AVAILABILITY_WINDOWS } from "@shared/schema";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 const createWorkerSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(1),
   photo: z.string().nullable().optional(),
+  documents: z.array(z.string()).default([]),
   area: z.string().min(1),
   skills: z.array(z.string()).default([]),
   isVerified: z.boolean().default(false),
@@ -25,6 +27,7 @@ const updateWorkerSchema = z.object({
   name: z.string().min(1).optional(),
   phone: z.string().min(1).optional(),
   photo: z.string().nullable().optional(),
+  documents: z.array(z.string()).optional(),
   area: z.string().min(1).optional(),
   skills: z.array(z.string()).optional(),
   isVerified: z.boolean().optional(),
@@ -76,6 +79,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Register object storage routes for file uploads
+  registerObjectStorageRoutes(app);
+
   // Pricing endpoint - calculate price for employer
   app.post("/api/pricing/calculate", async (req, res) => {
     try {

@@ -60,6 +60,7 @@ export const workers = pgTable("workers", {
   name: text("name").notNull(),
   phone: text("phone").notNull().unique(),
   photo: text("photo"),
+  documents: text("documents").array().default(sql`ARRAY[]::text[]`),
   area: text("area").notNull(),
   skills: text("skills").array().notNull().default(sql`ARRAY[]::text[]`),
   isVerified: boolean("is_verified").notNull().default(false),

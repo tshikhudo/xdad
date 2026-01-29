@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Search, Users, Briefcase, CheckCircle, XCircle, Star, Edit, Trash2, Loader2, Shield, MapPin, Phone, Settings, DollarSign } from "lucide-react";
+import { Plus, Search, Users, Briefcase, CheckCircle, XCircle, Star, Edit, Trash2, Loader2, Shield, MapPin, Phone, Settings, DollarSign, Camera, Upload, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
+import { useUpload } from "@/hooks/use-upload";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Worker, Job, InsertWorker, PricingRule } from "@shared/schema";
 import { TASKS, AREAS, HOUSE_SIZES, AVAILABILITY_WINDOWS } from "@shared/schema";
@@ -44,6 +45,26 @@ export default function AdminDashboard() {
   });
   const [jobToRate, setJobToRate] = useState<Job | null>(null);
   const [selectedRating, setSelectedRating] = useState(5);
+  const [workerDocuments, setWorkerDocuments] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { uploadFile, isUploading } = useUpload({
+    onSuccess: (response) => {
+      setWorkerDocuments(prev => [...prev, response.objectPath]);
+      toast({ title: t("admin.documentUploaded") });
+    },
+    onError: () => {
+      toast({ title: t("common.error"), variant: "destructive" });
+    },
+  });
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadFile(file);
+      e.target.value = "";
+    }
+  };
 
   const { data: workers = [], isLoading: isLoadingWorkers } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
@@ -206,7 +227,10 @@ export default function AdminDashboard() {
 
   const handleUpdateWorker = () => {
     if (!editingWorker) return;
-    updateWorkerMutation.mutate({ id: editingWorker.id, data: editingWorker });
+    updateWorkerMutation.mutate({ 
+      id: editingWorker.id, 
+      data: { ...editingWorker, documents: workerDocuments } 
+    });
   };
 
   const toggleSkill = (skill: string, isEdit: boolean = false) => {
@@ -373,9 +397,32 @@ export default function AdminDashboard() {
 
                       <div className="flex items-center gap-2">
                         <Button
+                          variant={worker.isVerified ? "secondary" : "default"}
+                          size="sm"
+                          onClick={() => updateWorkerMutation.mutate({ id: worker.id, data: { isVerified: !worker.isVerified } })}
+                          disabled={updateWorkerMutation.isPending}
+                          data-testid={`button-verify-worker-${worker.id}`}
+                          className="gap-1"
+                        >
+                          {worker.isVerified ? (
+                            <>
+                              <XCircle className="h-3.5 w-3.5" />
+                              {t("admin.unverify")}
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              {t("admin.verify")}
+                            </>
+                          )}
+                        </Button>
+                        <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setEditingWorker(worker)}
+                          onClick={() => {
+                            setEditingWorker(worker);
+                            setWorkerDocuments(worker.documents || []);
+                          }}
                           data-testid={`button-edit-worker-${worker.id}`}
                         >
                           <Edit className="h-4 w-4" />
@@ -728,6 +775,75 @@ export default function AdminDashboard() {
                   onCheckedChange={(checked) => setEditingWorker({ ...editingWorker, isAvailable: !!checked })}
                 />
                 <Label htmlFor="edit-available">{t("worker.available")}</Label>
+              </div>
+
+              <div>
+                <Label>{t("admin.documents")}</Label>
+                <div className="mt-2 space-y-2">
+                  {workerDocuments.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {workerDocuments.map((doc, index) => (
+                        <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-sm">
+                          <FileText className="h-3.5 w-3.5" />
+                          <span className="max-w-[120px] truncate">{doc.split('/').pop()}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => setWorkerDocuments(prev => prev.filter((_, i) => i !== index))}
+                          >
+                            <XCircle className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      accept="image/*,.pdf,.doc,.docx"
+                      className="hidden"
+                      data-testid="input-document-file"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="gap-1"
+                      data-testid="button-upload-document"
+                    >
+                      {isUploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      {t("admin.uploadDocument")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.capture = 'environment';
+                        input.onchange = (e) => handleFileSelect(e as any);
+                        input.click();
+                      }}
+                      disabled={isUploading}
+                      className="gap-1"
+                      data-testid="button-camera-document"
+                    >
+                      <Camera className="h-4 w-4" />
+                      {t("admin.takePhoto")}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
