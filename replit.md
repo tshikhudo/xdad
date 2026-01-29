@@ -16,7 +16,13 @@ MaidSync uses a **scope-based pricing model** where employers describe their nee
 3. **Availability Window** - Morning, Afternoon, Flexible
 4. **Date** - Today, Tomorrow, This Week, Next Week
 5. **Area** - Major South African cities
-6. **Review & Pay** - Fixed price shown, calculated server-side
+6. **Payment Method** - Cash (pay worker directly), EFT (bank transfer), Card (speedpoint machine)
+7. **Review & Confirm** - Fixed price shown, calculated server-side
+
+### Authentication
+- **Username/Password based** - Simple login with username and password
+- **Admin credentials**: pfunzo1/Password.1 and Ray1/Password.1
+- **User roles**: worker (home + profile), employer (home + book + login), admin (home + admin panel)
 
 ### Pricing Formula
 ```

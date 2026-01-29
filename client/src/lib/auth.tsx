@@ -1,18 +1,27 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import type { User, UserRole } from "@shared/schema";
 
+interface AuthUser {
+  id: string;
+  username: string;
+  name: string;
+  role: UserRole;
+  workerId?: string | null;
+  employerId?: string | null;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
-  login: (email: string) => Promise<{ success: boolean; needsSignup?: boolean }>;
-  signup: (email: string, name: string, role: UserRole) => Promise<{ success: boolean; error?: string }>;
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string; needsSignup?: boolean }>;
+  signup: (username: string, password: string, name: string, role: UserRole) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,20 +39,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string): Promise<{ success: boolean; needsSignup?: boolean }> => {
+  const login = async (username: string, password: string): Promise<{ success: boolean; error?: string; needsSignup?: boolean }> => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ username, password }),
       });
       
       if (res.status === 404) {
         return { success: false, needsSignup: true };
       }
       
+      if (res.status === 401) {
+        return { success: false, error: "Wrong password" };
+      }
+      
       if (!res.ok) {
-        return { success: false };
+        return { success: false, error: "Login failed" };
       }
       
       const data = await res.json();
@@ -51,26 +64,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("userId", data.id);
       return { success: true };
     } catch {
-      return { success: false };
+      return { success: false, error: "Login failed" };
     }
   };
 
-  const signup = async (email: string, name: string, role: UserRole): Promise<{ success: boolean; error?: string }> => {
+  const signup = async (username: string, password: string, name: string, role: UserRole): Promise<{ success: boolean; error?: string }> => {
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, role }),
+        body: JSON.stringify({ username, password, name, role }),
       });
       
       if (res.status === 409) {
-        const data = await res.json();
-        if (data.user) {
-          setUser(data.user);
-          localStorage.setItem("userId", data.user.id);
-          return { success: true };
-        }
-        return { success: false, error: "Email already registered" };
+        return { success: false, error: "Username already taken" };
       }
       
       if (!res.ok) {

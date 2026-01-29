@@ -41,7 +41,7 @@ export interface IStorage {
   // Users
   getUsers(): Promise<User[]>;
   getUser(id: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
 }
@@ -176,6 +176,7 @@ export class MemStorage implements IStorage {
         name: worker.name,
         phone: worker.phone,
         photo: worker.photo ?? null,
+        documents: worker.documents ?? [],
         area: worker.area,
         skills: worker.skills ?? [],
         isVerified: worker.isVerified ?? false,
@@ -197,6 +198,7 @@ export class MemStorage implements IStorage {
       name: "Your Profile",
       phone: "+27 88 999 0000",
       photo: null,
+      documents: [],
       area: "Johannesburg CBD",
       skills: ["general_cleaning", "laundry", "ironing"],
       isVerified: true,
@@ -270,6 +272,7 @@ export class MemStorage implements IStorage {
         date: job.date,
         area: job.area,
         price: job.price,
+        paymentMethod: job.paymentMethod ?? "cash",
         status: job.status ?? "pending",
         jobMode: job.jobMode ?? "managed",
         workerPayout: job.workerPayout ?? null,
@@ -278,6 +281,36 @@ export class MemStorage implements IStorage {
         employerRating: job.employerRating ?? null,
         workerRating: job.workerRating ?? null,
         completedAt: job.completedAt ?? null,
+      });
+    });
+
+    // Seed admin users
+    const adminUsers: InsertUser[] = [
+      {
+        username: "pfunzo1",
+        password: "Password.1",
+        name: "Pfunzo",
+        role: "admin",
+      },
+      {
+        username: "Ray1",
+        password: "Password.1",
+        name: "Ray",
+        role: "admin",
+      },
+    ];
+
+    adminUsers.forEach((user) => {
+      const id = randomUUID();
+      this.users.set(id, {
+        id,
+        username: user.username,
+        password: user.password,
+        name: user.name,
+        role: user.role || "employer",
+        workerId: user.workerId ?? null,
+        employerId: user.employerId ?? null,
+        createdAt: new Date().toISOString(),
       });
     });
   }
@@ -321,6 +354,7 @@ export class MemStorage implements IStorage {
       name: insertWorker.name,
       phone: insertWorker.phone,
       photo: insertWorker.photo ?? null,
+      documents: insertWorker.documents ?? [],
       area: insertWorker.area,
       skills: insertWorker.skills ?? [],
       isVerified: insertWorker.isVerified ?? false,
@@ -382,6 +416,7 @@ export class MemStorage implements IStorage {
       date: insertJob.date,
       area: insertJob.area,
       price: insertJob.price,
+      paymentMethod: insertJob.paymentMethod ?? "cash",
       status: insertJob.status ?? "pending",
       jobMode: insertJob.jobMode ?? "managed",
       workerPayout: insertJob.workerPayout ?? null,
@@ -488,15 +523,16 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(u => u.email.toLowerCase() === email.toLowerCase());
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(u => u.username.toLowerCase() === username.toLowerCase());
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
     const user: User = {
       id,
-      email: insertUser.email,
+      username: insertUser.username,
+      password: insertUser.password,
       name: insertUser.name,
       role: insertUser.role || "employer",
       workerId: insertUser.workerId ?? null,

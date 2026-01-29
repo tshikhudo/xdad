@@ -46,6 +46,8 @@ const validHouseSizes = HOUSE_SIZES.map(h => h.key);
 const validTasks = TASKS.map(t => t.key);
 const validWindows = AVAILABILITY_WINDOWS.map(w => w.key);
 
+const validPaymentMethods = ["cash", "eft", "card"];
+
 const createJobSchema = z.object({
   employerId: z.string().min(1),
   workerId: z.string().nullable().optional(),
@@ -54,6 +56,7 @@ const createJobSchema = z.object({
   availabilityWindow: z.enum(validWindows as [string, ...string[]]),
   date: z.string().min(1),
   area: z.string().min(1),
+  paymentMethod: z.enum(validPaymentMethods as [string, ...string[]]).optional().default("cash"),
   status: z.string().default("pending"),
   jobMode: z.string().default("managed"),
 });
@@ -345,11 +348,13 @@ export async function registerRoutes(
 
   // User Authentication endpoints
   const loginSchema = z.object({
-    email: z.string().email(),
+    username: z.string().min(1),
+    password: z.string().min(1),
   });
 
   const signupSchema = z.object({
-    email: z.string().email(),
+    username: z.string().min(1),
+    password: z.string().min(1),
     name: z.string().min(1),
     role: z.enum(["worker", "employer", "admin"]).default("employer"),
   });
@@ -358,14 +363,20 @@ export async function registerRoutes(
     try {
       const result = loginSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid email" });
+        return res.status(400).json({ error: "Invalid login data" });
       }
       
-      const user = await storage.getUserByEmail(result.data.email);
+      const user = await storage.getUserByUsername(result.data.username);
       if (!user) {
         return res.status(404).json({ error: "User not found", needsSignup: true });
       }
-      res.json(user);
+      
+      if (user.password !== result.data.password) {
+        return res.status(401).json({ error: "Wrong password" });
+      }
+      
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
     } catch (error) {
       res.status(500).json({ error: "Login failed" });
     }
@@ -378,17 +389,19 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid signup data", details: result.error.issues });
       }
       
-      const existing = await storage.getUserByEmail(result.data.email);
+      const existing = await storage.getUserByUsername(result.data.username);
       if (existing) {
-        return res.status(409).json({ error: "Email already registered", user: existing });
+        return res.status(409).json({ error: "Username already taken" });
       }
       
       const user = await storage.createUser({
-        email: result.data.email,
+        username: result.data.username,
+        password: result.data.password,
         name: result.data.name,
         role: result.data.role,
       });
-      res.status(201).json(user);
+      const { password, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
     } catch (error) {
       console.error("Signup error:", error);
       res.status(500).json({ error: "Signup failed" });

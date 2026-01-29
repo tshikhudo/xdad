@@ -25,7 +25,7 @@ const taskIcons: Record<string, typeof Sparkles> = {
   deep_clean: Sparkles,
 };
 
-type BookingStep = "houseSize" | "tasks" | "window" | "date" | "area" | "login" | "review" | "success";
+type BookingStep = "houseSize" | "tasks" | "window" | "date" | "area" | "payment" | "review" | "success";
 
 interface BookingState {
   houseSize: string;
@@ -33,12 +33,13 @@ interface BookingState {
   availabilityWindow: string;
   date: string;
   area: string;
+  paymentMethod: string;
 }
 
 export default function Book() {
   const { t } = useI18n();
   const { toast } = useToast();
-  const { user, login, signup } = useAuth();
+  const { user } = useAuth();
   const [step, setStep] = useState<BookingStep>("houseSize");
   const [booking, setBooking] = useState<BookingState>({
     houseSize: "",
@@ -46,16 +47,11 @@ export default function Book() {
     availabilityWindow: "",
     date: "",
     area: "",
+    paymentMethod: "",
   });
   const [price, setPrice] = useState<number>(0);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(undefined);
-  
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginName, setLoginName] = useState("");
-  const [loginStep, setLoginStep] = useState<"email" | "signup">("email");
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState("");
 
   // Fetch pricing rules from server
   const { data: pricingRules } = useQuery<PricingRule>({
@@ -91,6 +87,7 @@ export default function Book() {
         availabilityWindow: booking.availabilityWindow,
         date: booking.date,
         area: booking.area,
+        paymentMethod: booking.paymentMethod,
       });
     },
     onSuccess: () => {
@@ -124,9 +121,7 @@ export default function Book() {
 
   const isCustomDate = booking.date && booking.date !== todayValue && booking.date !== tomorrowValue;
 
-  const steps: BookingStep[] = user 
-    ? ["houseSize", "tasks", "window", "date", "area", "review"]
-    : ["houseSize", "tasks", "window", "date", "area", "login", "review"];
+  const steps: BookingStep[] = ["houseSize", "tasks", "window", "date", "area", "payment", "review"];
   const currentIndex = steps.indexOf(step);
 
   const canProceed = () => {
@@ -136,61 +131,15 @@ export default function Book() {
       case "window": return !!booking.availabilityWindow;
       case "date": return !!booking.date;
       case "area": return !!booking.area;
-      case "login": return !!user;
+      case "payment": return !!booking.paymentMethod;
       case "review": return true;
       default: return false;
-    }
-  };
-
-  const handleLoginSubmit = async () => {
-    if (!loginEmail.includes("@")) {
-      setLoginError("Please enter a valid email");
-      return;
-    }
-    
-    setLoginLoading(true);
-    setLoginError("");
-    
-    const result = await login(loginEmail);
-    setLoginLoading(false);
-    
-    if (result.success) {
-      setStep("review");
-    } else if (result.needsSignup) {
-      setLoginStep("signup");
-    } else {
-      setLoginError("Login failed");
-    }
-  };
-
-  const handleSignupSubmit = async () => {
-    if (!loginName.trim()) {
-      setLoginError("Please enter your name");
-      return;
-    }
-    
-    setLoginLoading(true);
-    setLoginError("");
-    
-    const result = await signup(loginEmail, loginName, "employer");
-    setLoginLoading(false);
-    
-    if (result.success) {
-      setStep("review");
-    } else {
-      setLoginError(result.error || "Signup failed");
     }
   };
 
   const handleNext = () => {
     if (step === "review") {
       createJobMutation.mutate();
-    } else if (step === "login") {
-      if (loginStep === "email") {
-        handleLoginSubmit();
-      } else {
-        handleSignupSubmit();
-      }
     } else {
       const nextIndex = currentIndex + 1;
       if (nextIndex < steps.length) {
@@ -495,59 +444,68 @@ export default function Book() {
           </div>
         )}
 
-        {step === "login" && (
+        {step === "payment" && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">{t("auth.loginToContinue")}</h2>
-            
-            {loginError && (
-              <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-                {loginError}
-              </div>
-            )}
-            
-            {loginStep === "email" ? (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="login-email">{t("auth.email")}</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder={t("auth.emailPlaceholder")}
-                    className="mt-1"
-                    data-testid="input-booking-email"
-                  />
+            <h2 className="text-xl font-bold">{t("payment.selectMethod")}</h2>
+            <div className="grid gap-3">
+              <Card
+                data-testid="card-payment-cash"
+                className={`p-5 cursor-pointer transition-all hover-elevate ${
+                  booking.paymentMethod === "cash"
+                    ? "ring-2 ring-primary bg-primary/5"
+                    : ""
+                }`}
+                onClick={() => setBooking(prev => ({ ...prev, paymentMethod: "cash" }))}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">{t("payment.cash")}</span>
+                    <p className="text-sm text-muted-foreground">{t("payment.cashDesc")}</p>
+                  </div>
+                  {booking.paymentMethod === "cash" && (
+                    <Check className="w-6 h-6 text-primary" />
+                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <Label>{t("auth.email")}</Label>
-                  <div className="text-sm text-muted-foreground mt-1">{loginEmail}</div>
+              </Card>
+              <Card
+                data-testid="card-payment-eft"
+                className={`p-5 cursor-pointer transition-all hover-elevate ${
+                  booking.paymentMethod === "eft"
+                    ? "ring-2 ring-primary bg-primary/5"
+                    : ""
+                }`}
+                onClick={() => setBooking(prev => ({ ...prev, paymentMethod: "eft" }))}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">{t("payment.eft")}</span>
+                    <p className="text-sm text-muted-foreground">{t("payment.eftDesc")}</p>
+                  </div>
+                  {booking.paymentMethod === "eft" && (
+                    <Check className="w-6 h-6 text-primary" />
+                  )}
                 </div>
-                <div>
-                  <Label htmlFor="login-name">{t("auth.name")}</Label>
-                  <Input
-                    id="login-name"
-                    type="text"
-                    value={loginName}
-                    onChange={(e) => setLoginName(e.target.value)}
-                    placeholder={t("auth.namePlaceholder")}
-                    className="mt-1"
-                    data-testid="input-booking-name"
-                  />
+              </Card>
+              <Card
+                data-testid="card-payment-card"
+                className={`p-5 cursor-pointer transition-all hover-elevate ${
+                  booking.paymentMethod === "card"
+                    ? "ring-2 ring-primary bg-primary/5"
+                    : ""
+                }`}
+                onClick={() => setBooking(prev => ({ ...prev, paymentMethod: "card" }))}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">{t("payment.card")}</span>
+                    <p className="text-sm text-muted-foreground">{t("payment.cardDesc")}</p>
+                  </div>
+                  {booking.paymentMethod === "card" && (
+                    <Check className="w-6 h-6 text-primary" />
+                  )}
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => setLoginStep("email")}
-                >
-                  {t("book.back")}
-                </Button>
-              </div>
-            )}
+              </Card>
+            </div>
           </div>
         )}
 
@@ -620,21 +578,16 @@ export default function Book() {
         <Button
           size="lg"
           className="flex-1"
-          disabled={(!canProceed() && step !== "login") || createJobMutation.isPending || loginLoading}
+          disabled={!canProceed() || createJobMutation.isPending}
           onClick={handleNext}
-          data-testid={step === "review" ? "button-pay" : step === "login" ? "button-login-continue" : "button-next"}
+          data-testid={step === "review" ? "button-confirm" : "button-next"}
         >
-          {createJobMutation.isPending || loginLoading ? (
+          {createJobMutation.isPending ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : step === "review" ? (
             <>
-              {t("book.payNow")}
+              {t("book.confirm")}
               <Check className="w-5 h-5 ml-2" />
-            </>
-          ) : step === "login" ? (
-            <>
-              {loginStep === "email" ? t("auth.login") : t("auth.createAccount")}
-              <ArrowRight className="w-5 h-5 ml-2" />
             </>
           ) : (
             <>

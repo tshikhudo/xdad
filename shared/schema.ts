@@ -106,6 +106,7 @@ export const jobs = pgTable("jobs", {
   date: text("date").notNull(),
   area: text("area").notNull(),
   price: real("price").notNull(),
+  paymentMethod: text("payment_method").notNull().default("cash"),
   status: text("status").notNull().default("pending"),
   jobMode: text("job_mode").notNull().default("managed"),
   workerPayout: real("worker_payout"),
@@ -149,10 +150,15 @@ export type Admin = typeof admins.$inferSelect;
 export const USER_ROLES = ["worker", "employer", "admin"] as const;
 export type UserRole = typeof USER_ROLES[number];
 
+// Payment methods
+export const PAYMENT_METHODS = ["cash", "eft", "card"] as const;
+export type PaymentMethod = typeof PAYMENT_METHODS[number];
+
 // User accounts for authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull().unique(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
   name: text("name").notNull(),
   role: text("role").notNull().default("employer"),
   workerId: varchar("worker_id"),

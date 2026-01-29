@@ -9,30 +9,35 @@ import { useAuth } from "@/lib/auth";
 import { Loader2, User, Briefcase } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
-type Step = "email" | "signup" | "role";
+type Step = "login" | "signup" | "role";
 
 export default function Login() {
   const { t } = useI18n();
   const { login, signup } = useAuth();
   const [, setLocation] = useLocation();
   
-  const [step, setStep] = useState<Step>("email");
-  const [email, setEmail] = useState("");
+  const [step, setStep] = useState<Step>("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes("@")) {
-      setError("Please enter a valid email");
+    if (!username.trim()) {
+      setError(t("auth.enterUsername"));
+      return;
+    }
+    if (!password.trim()) {
+      setError(t("auth.enterPassword"));
       return;
     }
     
     setIsLoading(true);
     setError("");
     
-    const result = await login(email);
+    const result = await login(username, password);
     setIsLoading(false);
     
     if (result.success) {
@@ -40,14 +45,14 @@ export default function Login() {
     } else if (result.needsSignup) {
       setStep("signup");
     } else {
-      setError("Login failed. Please try again.");
+      setError(result.error || t("auth.loginFailed"));
     }
   };
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Please enter your name");
+      setError(t("auth.enterName"));
       return;
     }
     setStep("role");
@@ -57,7 +62,7 @@ export default function Login() {
     setIsLoading(true);
     setError("");
     
-    const result = await signup(email, name, role);
+    const result = await signup(username, password, name, role);
     setIsLoading(false);
     
     if (result.success) {
@@ -67,7 +72,7 @@ export default function Login() {
         setLocation("/");
       }
     } else {
-      setError(result.error || "Signup failed");
+      setError(result.error || t("auth.signupFailed"));
     }
   };
 
@@ -91,33 +96,75 @@ export default function Login() {
             </div>
           )}
 
-          {step === "email" && (
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
+          {step === "login" && (
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="email">{t("auth.email")}</Label>
+                <Label htmlFor="username">{t("auth.username")}</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t("auth.emailPlaceholder")}
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={t("auth.usernamePlaceholder")}
                   className="mt-1"
                   autoFocus
-                  data-testid="input-email"
+                  data-testid="input-username"
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">{t("auth.password")}</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t("auth.passwordPlaceholder")}
+                  className="mt-1"
+                  data-testid="input-password"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-login">
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 {t("auth.login")}
               </Button>
+              <div className="text-center text-sm text-muted-foreground">
+                {t("auth.noAccount")}{" "}
+                <button
+                  type="button"
+                  className="text-primary hover:underline"
+                  onClick={() => setStep("signup")}
+                >
+                  {t("auth.signup")}
+                </button>
+              </div>
             </form>
           )}
 
           {step === "signup" && (
             <form onSubmit={handleSignupSubmit} className="space-y-4">
               <div>
-                <Label>{t("auth.email")}</Label>
-                <div className="text-sm text-muted-foreground mt-1">{email}</div>
+                <Label htmlFor="signup-username">{t("auth.username")}</Label>
+                <Input
+                  id="signup-username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={t("auth.usernamePlaceholder")}
+                  className="mt-1"
+                  data-testid="input-signup-username"
+                />
+              </div>
+              <div>
+                <Label htmlFor="signup-password">{t("auth.password")}</Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t("auth.passwordPlaceholder")}
+                  className="mt-1"
+                  data-testid="input-signup-password"
+                />
               </div>
               <div>
                 <Label htmlFor="name">{t("auth.name")}</Label>
@@ -133,13 +180,13 @@ export default function Login() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-continue">
-                {t("auth.createAccount")}
+                {t("book.next")}
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 className="w-full"
-                onClick={() => setStep("email")}
+                onClick={() => setStep("login")}
               >
                 {t("book.back")}
               </Button>
@@ -148,39 +195,34 @@ export default function Login() {
 
           {step === "role" && (
             <div className="space-y-4">
-              <div>
-                <Label>{t("auth.name")}</Label>
-                <div className="text-sm text-muted-foreground mt-1">{name}</div>
-              </div>
-              
+              <p className="text-center text-muted-foreground mb-4">
+                {t("auth.chooseRole")}
+              </p>
               <Button
+                className="w-full h-16 text-lg"
+                variant="outline"
                 onClick={() => handleRoleSelect("employer")}
-                className="w-full h-16 text-left justify-start gap-4"
-                variant="outline"
                 disabled={isLoading}
-                data-testid="button-employer"
+                data-testid="button-role-employer"
               >
-                <Briefcase className="h-6 w-6" />
-                <span>{t("auth.continueAsEmployer")}</span>
+                <Briefcase className="h-6 w-6 mr-3" />
+                {t("auth.continueAsEmployer")}
               </Button>
-              
               <Button
-                onClick={() => handleRoleSelect("worker")}
-                className="w-full h-16 text-left justify-start gap-4"
+                className="w-full h-16 text-lg"
                 variant="outline"
+                onClick={() => handleRoleSelect("worker")}
                 disabled={isLoading}
-                data-testid="button-worker"
+                data-testid="button-role-worker"
               >
-                <User className="h-6 w-6" />
-                <span>{t("auth.continueAsWorker")}</span>
+                <User className="h-6 w-6 mr-3" />
+                {t("auth.continueAsWorker")}
               </Button>
-
               {isLoading && (
                 <div className="flex justify-center">
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
               )}
-
               <Button
                 type="button"
                 variant="ghost"
