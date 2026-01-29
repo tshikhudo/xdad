@@ -16,7 +16,7 @@ import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Worker, Job, InsertWorker, PricingRule } from "@shared/schema";
-import { TASKS, AREAS } from "@shared/schema";
+import { TASKS, AREAS, HOUSE_SIZES, AVAILABILITY_WINDOWS } from "@shared/schema";
 
 export default function AdminDashboard() {
   const { t } = useI18n();
@@ -31,6 +31,16 @@ export default function AdminDashboard() {
     skills: [],
     isVerified: false,
     isAvailable: true,
+  });
+  const [isAddJobOpen, setIsAddJobOpen] = useState(false);
+  const [newJob, setNewJob] = useState({
+    employerName: "",
+    employerPhone: "",
+    houseSize: "",
+    tasks: [] as string[],
+    availabilityWindow: "",
+    date: "",
+    area: "",
   });
 
   const { data: workers = [], isLoading: isLoadingWorkers } = useQuery<Worker[]>({
@@ -105,6 +115,54 @@ export default function AdminDashboard() {
       toast({ title: t("common.success") });
     },
   });
+
+  const createJobMutation = useMutation({
+    mutationFn: async (data: typeof newJob) => {
+      return apiRequest("POST", "/api/jobs", {
+        employerId: "admin-created-" + Date.now(),
+        houseSize: data.houseSize,
+        tasks: data.tasks,
+        availabilityWindow: data.availabilityWindow,
+        date: data.date,
+        area: data.area,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      setIsAddJobOpen(false);
+      resetNewJob();
+      toast({ title: t("common.success") });
+    },
+  });
+
+  const resetNewJob = () => {
+    setNewJob({
+      employerName: "",
+      employerPhone: "",
+      houseSize: "",
+      tasks: [],
+      availabilityWindow: "",
+      date: "",
+      area: "",
+    });
+  };
+
+  const handleAddJob = () => {
+    if (!newJob.houseSize || newJob.tasks.length === 0 || !newJob.availabilityWindow || !newJob.date || !newJob.area) {
+      toast({ title: "Please fill all required fields", variant: "destructive" });
+      return;
+    }
+    createJobMutation.mutate(newJob);
+  };
+
+  const toggleJobTask = (taskKey: string) => {
+    setNewJob(prev => ({
+      ...prev,
+      tasks: prev.tasks.includes(taskKey)
+        ? prev.tasks.filter(t => t !== taskKey)
+        : [...prev.tasks, taskKey]
+    }));
+  };
 
   const resetNewWorker = () => {
     setNewWorker({
@@ -330,6 +388,12 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="jobs" className="mt-4">
+            <div className="flex justify-end mb-4">
+              <Button onClick={() => setIsAddJobOpen(true)} className="gap-1.5" data-testid="button-add-job">
+                <Plus className="h-4 w-4" />
+                {t("admin.addJob")}
+              </Button>
+            </div>
             {isLoadingJobs ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -338,6 +402,10 @@ export default function AdminDashboard() {
               <Card className="p-8 text-center">
                 <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">No jobs found</p>
+                <Button onClick={() => setIsAddJobOpen(true)} className="mt-4 gap-1.5" data-testid="button-add-job-empty">
+                  <Plus className="h-4 w-4" />
+                  {t("admin.addJob")}
+                </Button>
               </Card>
             ) : (
               <div className="space-y-6">
@@ -654,6 +722,104 @@ export default function AdminDashboard() {
             <Button onClick={handleUpdateWorker} disabled={updateWorkerMutation.isPending}>
               {updateWorkerMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {t("admin.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddJobOpen} onOpenChange={setIsAddJobOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("admin.addJob")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>{t("book.houseSize")}</Label>
+              <Select
+                value={newJob.houseSize}
+                onValueChange={(value) => setNewJob({ ...newJob, houseSize: value })}
+              >
+                <SelectTrigger data-testid="select-job-housesize">
+                  <SelectValue placeholder="Select house size" />
+                </SelectTrigger>
+                <SelectContent>
+                  {HOUSE_SIZES.map((size) => (
+                    <SelectItem key={size.key} value={size.key}>
+                      {t(`book.houseSize${size.key.charAt(0).toUpperCase() + size.key.slice(1)}`)} ({size.bedrooms})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{t("book.selectTasks")}</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {TASKS.map((task) => (
+                  <div key={task.key} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`job-task-${task.key}`}
+                      checked={newJob.tasks.includes(task.key)}
+                      onCheckedChange={() => toggleJobTask(task.key)}
+                    />
+                    <Label htmlFor={`job-task-${task.key}`} className="text-sm">
+                      {t(`task.${task.key}`)}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label>{t("book.selectWindow")}</Label>
+              <Select
+                value={newJob.availabilityWindow}
+                onValueChange={(value) => setNewJob({ ...newJob, availabilityWindow: value })}
+              >
+                <SelectTrigger data-testid="select-job-window">
+                  <SelectValue placeholder="Select time window" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABILITY_WINDOWS.map((window) => (
+                    <SelectItem key={window.key} value={window.key}>
+                      {t(`window.${window.key}`)} ({window.label})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="job-date">{t("book.selectDate")}</Label>
+              <Input
+                id="job-date"
+                type="date"
+                value={newJob.date}
+                onChange={(e) => setNewJob({ ...newJob, date: e.target.value })}
+                data-testid="input-job-date"
+              />
+            </div>
+            <div>
+              <Label>{t("worker.area")}</Label>
+              <Select
+                value={newJob.area}
+                onValueChange={(value) => setNewJob({ ...newJob, area: value })}
+              >
+                <SelectTrigger data-testid="select-job-area">
+                  <SelectValue placeholder="Select area" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AREAS.map((area) => (
+                    <SelectItem key={area} value={area}>{area}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddJobOpen(false)}>
+              {t("book.back")}
+            </Button>
+            <Button onClick={handleAddJob} disabled={createJobMutation.isPending} data-testid="button-submit-job">
+              {createJobMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {t("admin.addJob")}
             </Button>
           </DialogFooter>
         </DialogContent>

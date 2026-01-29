@@ -205,10 +205,12 @@ export class MemStorage implements IStorage {
       id: demoEmployerId,
       name: "Demo Household",
       phone: "+27 11 123 4567",
+      photo: null,
       area: "Johannesburg CBD",
       reliabilityScore: 85,
       reliabilityCount: 5,
       jobsBooked: 5,
+      supportingDocuments: [],
     });
 
     // Seed demo jobs with scope-based data
@@ -428,10 +430,12 @@ export class MemStorage implements IStorage {
       id,
       name: insertEmployer.name,
       phone: insertEmployer.phone,
+      photo: insertEmployer.photo ?? null,
       area: insertEmployer.area,
       reliabilityScore: insertEmployer.reliabilityScore ?? 100,
       reliabilityCount: insertEmployer.reliabilityCount ?? 0,
       jobsBooked: insertEmployer.jobsBooked ?? 0,
+      supportingDocuments: insertEmployer.supportingDocuments ?? [],
     };
     this.employers.set(id, employer);
     return employer;

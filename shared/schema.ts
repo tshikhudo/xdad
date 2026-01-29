@@ -82,10 +82,12 @@ export const employers = pgTable("employers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   phone: text("phone").notNull().unique(),
+  photo: text("photo"),
   area: text("area").notNull(),
   reliabilityScore: integer("reliability_score").notNull().default(100),
   reliabilityCount: integer("reliability_count").notNull().default(0),
   jobsBooked: integer("jobs_booked").notNull().default(0),
+  supportingDocuments: text("supporting_documents").array().default(sql`ARRAY[]::text[]`),
 });
 
 export const insertEmployerSchema = createInsertSchema(employers).omit({ id: true });
