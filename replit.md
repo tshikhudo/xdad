@@ -1,14 +1,14 @@
-# MaidSync - Domestic Worker Platform
+# Febreeze Clean - Domestic Worker Platform
 
 ## Overview
 
-MaidSync is a mobile-first Progressive Web App (PWA) designed to connect informal domestic workers (primarily cleaners) with employers in South Africa. The platform focuses on trust, safety, and dignity for both workers and employers, aiming to replace informal street-corner hiring with a reliable, verified system.
+Febreeze Clean is a mobile-first Progressive Web App (PWA) designed to connect informal domestic workers (primarily cleaners) with employers in South Africa. The platform focuses on trust, safety, and dignity for both workers and employers, aiming to replace informal street-corner hiring with a reliable, verified system.
 
 The application supports multiple South African languages (English, isiZulu, Sesotho, Afrikaans) and is optimized for low-end Android devices with minimal data usage.
 
 ## Scope-Based Pricing Model
 
-MaidSync uses a **scope-based pricing model** where employers describe their needs and receive a fixed price - they NEVER choose workers, hours, or negotiate.
+Febreeze Clean uses a **scope-based pricing model** where employers describe their needs and receive a fixed price - they NEVER choose workers, hours, or negotiate.
 
 ### Booking Flow
 1. **House Size** - Small (1x), Medium (1.5x), Large (2x)
@@ -21,6 +21,7 @@ MaidSync uses a **scope-based pricing model** where employers describe their nee
 
 ### Authentication
 - **Username/Password based** - Simple login with username and password
+- **Google login** - Employers can also sign in with Google (via Replit Auth)
 - **Admin credentials**: pfunzo1/Password.1 and Ray1/Password.1
 - **User roles**: worker (home + profile), employer (home + book + login), admin (home + admin panel)
 

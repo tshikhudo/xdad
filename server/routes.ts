@@ -5,6 +5,7 @@ import { z } from "zod";
 import { calculatePrice, HOUSE_SIZES, TASKS, AVAILABILITY_WINDOWS } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { registerWhatsAppRoutes } from "./whatsapp";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 
 const createWorkerSchema = z.object({
   name: z.string().min(1),
@@ -83,6 +84,10 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Setup Replit Auth (Google login) - must be before other routes
+  await setupAuth(app);
+  registerAuthRoutes(app);
+  
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
   

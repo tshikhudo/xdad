@@ -133,7 +133,7 @@ async function processMessage(phone: string, message: string): Promise<string> {
   switch (state.step) {
     case "start":
       state.step = "house_size";
-      return `Welcome to MaidSync!
+      return `Welcome to Febreeze Clean!
 
 Let's book a cleaner for you.
 
@@ -252,7 +252,7 @@ Your booking #${job.id.slice(0, 8)} has been received.
 
 We'll match you with a verified cleaner and notify you shortly.
 
-Thank you for using MaidSync!
+Thank you for using Febreeze Clean!
 
 Send 'hi' to make another booking.`;
       } else if (input === "no" || input === "n" || input === "cancel") {

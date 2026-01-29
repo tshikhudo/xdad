@@ -5,7 +5,7 @@ const CONTACT_PHONE = "27749501677";
 
 export function ContactButton() {
   const handleContact = () => {
-    const message = encodeURIComponent("Hi Ray, I'm interested in MaidSync services.");
+    const message = encodeURIComponent("Hi, I'm interested in Febreeze Clean services.");
     window.open(`https://wa.me/${CONTACT_PHONE}?text=${message}`, "_blank");
   };
 

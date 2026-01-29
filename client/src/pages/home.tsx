@@ -13,10 +13,8 @@ export default function Home() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
         <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">MS</span>
-            </div>
-            <span className="font-bold text-lg">MaidSync</span>
+            <img src="/logo.jpg" alt="Febreeze Clean" className="h-10 w-10 rounded-lg object-cover" />
+            <span className="font-bold text-lg">Febreeze Clean</span>
           </div>
           <LanguageSwitcher />
         </div>

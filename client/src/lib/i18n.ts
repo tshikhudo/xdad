@@ -38,8 +38,10 @@ export const translations: Record<Language, Record<string, string>> = {
     "auth.chooseRole": "What do you need?",
     "auth.alreadyHaveAccount": "Already have an account?",
     "auth.noAccount": "Don't have an account?",
-    "auth.welcome": "Welcome to MaidSync",
+    "auth.welcome": "Welcome to Febreeze Clean",
     "auth.loginToContinue": "Login or create an account",
+    "auth.or": "or",
+    "auth.signInWithGoogle": "Sign in with Google",
 
     "payment.selectMethod": "How will you pay?",
     "payment.cash": "Cash",
@@ -49,7 +51,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "payment.eftDesc": "Transfer to our bank account",
     "payment.cardDesc": "Card machine on arrival",
 
-    "contact.defaultMessage": "Hi Ray, I'm interested in MaidSync services.",
+    "contact.defaultMessage": "Hi, I'm interested in Febreeze Clean services.",
 
     "home.tagline": "Professional cleaning, simple pricing",
     "home.subtitle": "Tell us your house size, pick your tasks, and pay one clear price",
@@ -212,8 +214,10 @@ export const translations: Record<Language, Record<string, string>> = {
     "auth.chooseRole": "Udingani?",
     "auth.alreadyHaveAccount": "Usunayo i-akhawunti?",
     "auth.noAccount": "Awunayo i-akhawunti?",
-    "auth.welcome": "Siyakwamukela ku-MaidSync",
+    "auth.welcome": "Siyakwamukela ku-Febreeze Clean",
     "auth.loginToContinue": "Ngena noma udale i-akhawunti",
+    "auth.or": "noma",
+    "auth.signInWithGoogle": "Ngena nge-Google",
 
     "payment.selectMethod": "Uzokhokhela kanjani?",
     "payment.cash": "Imali",
@@ -223,7 +227,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "payment.eftDesc": "Dlulisela ku-akhawunti yethu yasebhange",
     "payment.cardDesc": "Umshini wekhadi uma ufika",
 
-    "contact.defaultMessage": "Sawubona Ray, ngithanda izinsizakalo ze-MaidSync.",
+    "contact.defaultMessage": "Sawubona, ngithanda izinsizakalo ze-Febreeze Clean.",
 
     "home.tagline": "Ukuhlanza okuhle, intengo elula",
     "home.subtitle": "Sitshele ubukhulu bendlu yakho, ukhethe imisebenzi, ukhokhe intengo eyodwa ecacile",
@@ -386,8 +390,10 @@ export const translations: Record<Language, Record<string, string>> = {
     "auth.chooseRole": "U hloka eng?",
     "auth.alreadyHaveAccount": "U se u na le ak'haonto?",
     "auth.noAccount": "Ha u na ak'haonto?",
-    "auth.welcome": "Rea u amohela ho MaidSync",
+    "auth.welcome": "Rea u amohela ho Febreeze Clean",
     "auth.loginToContinue": "Kena kapa u thehe ak'haonto",
+    "auth.or": "kapa",
+    "auth.signInWithGoogle": "Kena ka Google",
 
     "payment.selectMethod": "U tla lefa joang?",
     "payment.cash": "Chelete",
@@ -397,7 +403,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "payment.eftDesc": "Fetisa ho ak'haonto ea rona ea banka",
     "payment.cardDesc": "Mochine oa karete ha u fihla",
 
-    "contact.defaultMessage": "Lumela Ray, ke thahasella litšebeletso tsa MaidSync.",
+    "contact.defaultMessage": "Lumela, ke thahasella litšebeletso tsa Febreeze Clean.",
 
     "home.tagline": "Ho hlatsoa ho hloekileng, theko e bonolo",
     "home.subtitle": "Re bolelle boholo ba ntlo ya hao, khetha mesebetsi, lefa theko e le nngwe e hlakileng",
@@ -560,8 +566,10 @@ export const translations: Record<Language, Record<string, string>> = {
     "auth.chooseRole": "Wat het jy nodig?",
     "auth.alreadyHaveAccount": "Het reeds 'n rekening?",
     "auth.noAccount": "Nog nie 'n rekening nie?",
-    "auth.welcome": "Welkom by MaidSync",
+    "auth.welcome": "Welkom by Febreeze Clean",
     "auth.loginToContinue": "Teken in of skep 'n rekening",
+    "auth.or": "of",
+    "auth.signInWithGoogle": "Teken in met Google",
 
     "payment.selectMethod": "Hoe sal jy betaal?",
     "payment.cash": "Kontant",
@@ -571,7 +579,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "payment.eftDesc": "Oordrag na ons bankrekening",
     "payment.cardDesc": "Kaartmasjien by aankoms",
 
-    "contact.defaultMessage": "Hallo Ray, ek stel belang in MaidSync dienste.",
+    "contact.defaultMessage": "Hallo, ek stel belang in Febreeze Clean dienste.",
 
     "home.tagline": "Professionele skoonmaak, eenvoudige pryse",
     "home.subtitle": "Vertel ons jou huisgrootte, kies jou take, en betaal een duidelike prys",

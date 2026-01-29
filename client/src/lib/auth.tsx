@@ -25,18 +25,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedUserId = localStorage.getItem("userId");
-    if (savedUserId) {
-      fetch(`/api/auth/user/${savedUserId}`)
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data) setUser(data);
-        })
-        .catch(() => {})
-        .finally(() => setIsLoading(false));
-    } else {
+    const checkAuth = async () => {
+      // First check for Replit Auth session (Google login)
+      try {
+        const replitAuthRes = await fetch("/api/auth/user", { credentials: "include" });
+        if (replitAuthRes.ok) {
+          const replitUser = await replitAuthRes.json();
+          // User logged in via Google - treat as employer
+          setUser({
+            id: replitUser.id,
+            username: replitUser.email || replitUser.id,
+            name: [replitUser.firstName, replitUser.lastName].filter(Boolean).join(" ") || "User",
+            role: "employer" as UserRole,
+            employerId: replitUser.id,
+          });
+          setIsLoading(false);
+          return;
+        }
+      } catch {
+        // Replit Auth not available, continue to check localStorage
+      }
+
+      // Check for localStorage auth (username/password login)
+      const savedUserId = localStorage.getItem("userId");
+      if (savedUserId) {
+        try {
+          const res = await fetch(`/api/auth/user/${savedUserId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setUser(data);
+          }
+        } catch {
+          // Ignore errors
+        }
+      }
       setIsLoading(false);
-    }
+    };
+    
+    checkAuth();
   }, []);
 
   const login = async (username: string, password: string): Promise<{ success: boolean; error?: string; needsSignup?: boolean }> => {
@@ -93,9 +119,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const wasLocalUser = localStorage.getItem("userId");
     setUser(null);
     localStorage.removeItem("userId");
+    
+    // If user was logged in via Google (no localStorage userId), redirect to Replit logout
+    if (!wasLocalUser) {
+      window.location.href = "/api/logout";
+    }
   };
 
   return (

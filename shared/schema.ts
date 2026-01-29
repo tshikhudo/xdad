@@ -3,6 +3,9 @@ import { pgTable, text, varchar, integer, boolean, real } from "drizzle-orm/pg-c
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Export auth schema (required for Replit Auth)
+export * from "./models/auth";
+
 // House sizes with pricing weights
 export const HOUSE_SIZES = [
   { key: "small", bedrooms: "1-2", weight: 1.0 },
