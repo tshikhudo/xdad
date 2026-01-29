@@ -6,6 +6,34 @@ MaidSync is a mobile-first Progressive Web App (PWA) designed to connect informa
 
 The application supports multiple South African languages (English, isiZulu, Sesotho, Afrikaans) and is optimized for low-end Android devices with minimal data usage.
 
+## Scope-Based Pricing Model
+
+MaidSync uses a **scope-based pricing model** where employers describe their needs and receive a fixed price - they NEVER choose workers, hours, or negotiate.
+
+### Booking Flow
+1. **House Size** - Small (1x), Medium (1.5x), Large (2x)
+2. **Tasks** - General Cleaning (1x), Ironing (0.5x), Laundry (0.6x), Windows (0.4x), Deep Clean (1.2x)
+3. **Availability Window** - Morning, Afternoon, Flexible
+4. **Date** - Today, Tomorrow, This Week, Next Week
+5. **Area** - Major South African cities
+6. **Review & Pay** - Fixed price shown, calculated server-side
+
+### Pricing Formula
+```
+Price = basePrice × houseSizeMultiplier × sum(taskWeights)
+Worker Payout = Price × workerPayoutPercent
+```
+
+### Security
+- Price is **always calculated server-side** using admin-configured pricing rules
+- Client-provided prices are rejected/ignored
+- Enum validation for house sizes, tasks, and availability windows
+
+### Trust System
+- **Worker Ratings**: Visible to employers and admin
+- **Employer Reliability Score**: Hidden from employers, shown to workers as trust indicator
+- **Verification Badges**: ID verified, background checked, trained workers
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
