@@ -343,5 +343,69 @@ export async function registerRoutes(
     }
   });
 
+  // User Authentication endpoints
+  const loginSchema = z.object({
+    email: z.string().email(),
+  });
+
+  const signupSchema = z.object({
+    email: z.string().email(),
+    name: z.string().min(1),
+    role: z.enum(["worker", "employer", "admin"]).default("employer"),
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const result = loginSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid email" });
+      }
+      
+      const user = await storage.getUserByEmail(result.data.email);
+      if (!user) {
+        return res.status(404).json({ error: "User not found", needsSignup: true });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const result = signupSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid signup data", details: result.error.issues });
+      }
+      
+      const existing = await storage.getUserByEmail(result.data.email);
+      if (existing) {
+        return res.status(409).json({ error: "Email already registered", user: existing });
+      }
+      
+      const user = await storage.createUser({
+        email: result.data.email,
+        name: result.data.name,
+        role: result.data.role,
+      });
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ error: "Signup failed" });
+    }
+  });
+
+  app.get("/api/auth/user/:id", async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
   return httpServer;
 }

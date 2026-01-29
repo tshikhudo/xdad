@@ -1,15 +1,11 @@
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useI18n } from "@/lib/i18n";
 
 const CONTACT_PHONE = "27749501677";
-const CONTACT_NAME = "Ray";
 
 export function ContactButton() {
-  const { t } = useI18n();
-  
   const handleContact = () => {
-    const message = encodeURIComponent(t("contact.defaultMessage"));
+    const message = encodeURIComponent("Hi Ray, I'm interested in MaidSync services.");
     window.open(`https://wa.me/${CONTACT_PHONE}?text=${message}`, "_blank");
   };
 

@@ -2,7 +2,8 @@ import type {
   Worker, InsertWorker, 
   Job, InsertJob, 
   Employer, InsertEmployer,
-  PricingRule, InsertPricingRule 
+  PricingRule, InsertPricingRule,
+  User, InsertUser
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -36,6 +37,13 @@ export interface IStorage {
   // Pricing
   getPricingRules(): Promise<PricingRule | undefined>;
   updatePricingRules(data: Partial<PricingRule>): Promise<PricingRule>;
+
+  // Users
+  getUsers(): Promise<User[]>;
+  getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -43,11 +51,13 @@ export class MemStorage implements IStorage {
   private jobs: Map<string, Job>;
   private employers: Map<string, Employer>;
   private pricingRules: PricingRule;
+  private users: Map<string, User>;
 
   constructor() {
     this.workers = new Map();
     this.jobs = new Map();
     this.employers = new Map();
+    this.users = new Map();
     this.pricingRules = {
       id: "default",
       basePrice: 150,
@@ -467,6 +477,42 @@ export class MemStorage implements IStorage {
   async updatePricingRules(data: Partial<PricingRule>): Promise<PricingRule> {
     this.pricingRules = { ...this.pricingRules, ...data };
     return this.pricingRules;
+  }
+
+  // Users
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(u => u.email.toLowerCase() === email.toLowerCase());
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const user: User = {
+      id,
+      email: insertUser.email,
+      name: insertUser.name,
+      role: insertUser.role || "employer",
+      workerId: insertUser.workerId ?? null,
+      employerId: insertUser.employerId ?? null,
+      createdAt: new Date().toISOString(),
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async updateUser(id: string, data: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, ...data };
+    this.users.set(id, updated);
+    return updated;
   }
 }
 

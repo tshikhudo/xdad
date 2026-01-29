@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, Home, Sparkles, Flame, Shirt, Square, Calendar as CalendarIcon, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Home, Sparkles, Flame, Shirt, Square, Calendar as CalendarIcon, Clock, Loader2, User, Briefcase } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { HOUSE_SIZES, TASKS, AVAILABILITY_WINDOWS, AREAS } from "@shared/schema";
 import type { PricingRule } from "@shared/schema";
@@ -22,7 +25,7 @@ const taskIcons: Record<string, typeof Sparkles> = {
   deep_clean: Sparkles,
 };
 
-type BookingStep = "houseSize" | "tasks" | "window" | "date" | "area" | "review" | "success";
+type BookingStep = "houseSize" | "tasks" | "window" | "date" | "area" | "login" | "review" | "success";
 
 interface BookingState {
   houseSize: string;
@@ -35,6 +38,7 @@ interface BookingState {
 export default function Book() {
   const { t } = useI18n();
   const { toast } = useToast();
+  const { user, login, signup } = useAuth();
   const [step, setStep] = useState<BookingStep>("houseSize");
   const [booking, setBooking] = useState<BookingState>({
     houseSize: "",
@@ -46,6 +50,12 @@ export default function Book() {
   const [price, setPrice] = useState<number>(0);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(undefined);
+  
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginName, setLoginName] = useState("");
+  const [loginStep, setLoginStep] = useState<"email" | "signup">("email");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   // Fetch pricing rules from server
   const { data: pricingRules } = useQuery<PricingRule>({
@@ -75,7 +85,7 @@ export default function Book() {
     mutationFn: async () => {
       // Price is calculated server-side, we don't send it
       return apiRequest("POST", "/api/jobs", {
-        employerId: "temp-employer-" + Date.now(),
+        employerId: user?.id || "guest-" + Date.now(),
         houseSize: booking.houseSize,
         tasks: booking.tasks,
         availabilityWindow: booking.availabilityWindow,
@@ -114,7 +124,9 @@ export default function Book() {
 
   const isCustomDate = booking.date && booking.date !== todayValue && booking.date !== tomorrowValue;
 
-  const steps: BookingStep[] = ["houseSize", "tasks", "window", "date", "area", "review"];
+  const steps: BookingStep[] = user 
+    ? ["houseSize", "tasks", "window", "date", "area", "review"]
+    : ["houseSize", "tasks", "window", "date", "area", "login", "review"];
   const currentIndex = steps.indexOf(step);
 
   const canProceed = () => {
@@ -124,14 +136,61 @@ export default function Book() {
       case "window": return !!booking.availabilityWindow;
       case "date": return !!booking.date;
       case "area": return !!booking.area;
+      case "login": return !!user;
       case "review": return true;
       default: return false;
+    }
+  };
+
+  const handleLoginSubmit = async () => {
+    if (!loginEmail.includes("@")) {
+      setLoginError("Please enter a valid email");
+      return;
+    }
+    
+    setLoginLoading(true);
+    setLoginError("");
+    
+    const result = await login(loginEmail);
+    setLoginLoading(false);
+    
+    if (result.success) {
+      setStep("review");
+    } else if (result.needsSignup) {
+      setLoginStep("signup");
+    } else {
+      setLoginError("Login failed");
+    }
+  };
+
+  const handleSignupSubmit = async () => {
+    if (!loginName.trim()) {
+      setLoginError("Please enter your name");
+      return;
+    }
+    
+    setLoginLoading(true);
+    setLoginError("");
+    
+    const result = await signup(loginEmail, loginName, "employer");
+    setLoginLoading(false);
+    
+    if (result.success) {
+      setStep("review");
+    } else {
+      setLoginError(result.error || "Signup failed");
     }
   };
 
   const handleNext = () => {
     if (step === "review") {
       createJobMutation.mutate();
+    } else if (step === "login") {
+      if (loginStep === "email") {
+        handleLoginSubmit();
+      } else {
+        handleSignupSubmit();
+      }
     } else {
       const nextIndex = currentIndex + 1;
       if (nextIndex < steps.length) {
@@ -436,6 +495,62 @@ export default function Book() {
           </div>
         )}
 
+        {step === "login" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">{t("auth.loginToContinue")}</h2>
+            
+            {loginError && (
+              <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
+                {loginError}
+              </div>
+            )}
+            
+            {loginStep === "email" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="login-email">{t("auth.email")}</Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder={t("auth.emailPlaceholder")}
+                    className="mt-1"
+                    data-testid="input-booking-email"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <Label>{t("auth.email")}</Label>
+                  <div className="text-sm text-muted-foreground mt-1">{loginEmail}</div>
+                </div>
+                <div>
+                  <Label htmlFor="login-name">{t("auth.name")}</Label>
+                  <Input
+                    id="login-name"
+                    type="text"
+                    value={loginName}
+                    onChange={(e) => setLoginName(e.target.value)}
+                    placeholder={t("auth.namePlaceholder")}
+                    className="mt-1"
+                    data-testid="input-booking-name"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setLoginStep("email")}
+                >
+                  {t("book.back")}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         {step === "review" && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">{t("book.reviewPay")}</h2>
@@ -505,16 +620,21 @@ export default function Book() {
         <Button
           size="lg"
           className="flex-1"
-          disabled={!canProceed() || createJobMutation.isPending}
+          disabled={(!canProceed() && step !== "login") || createJobMutation.isPending || loginLoading}
           onClick={handleNext}
-          data-testid={step === "review" ? "button-pay" : "button-next"}
+          data-testid={step === "review" ? "button-pay" : step === "login" ? "button-login-continue" : "button-next"}
         >
-          {createJobMutation.isPending ? (
+          {createJobMutation.isPending || loginLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : step === "review" ? (
             <>
               {t("book.payNow")}
               <Check className="w-5 h-5 ml-2" />
+            </>
+          ) : step === "login" ? (
+            <>
+              {loginStep === "email" ? t("auth.login") : t("auth.createAccount")}
+              <ArrowRight className="w-5 h-5 ml-2" />
             </>
           ) : (
             <>

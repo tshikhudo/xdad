@@ -145,18 +145,22 @@ export const insertAdminSchema = createInsertSchema(admins).omit({ id: true });
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type Admin = typeof admins.$inferSelect;
 
-// Keep legacy users for compatibility
+// User roles
+export const USER_ROLES = ["worker", "employer", "admin"] as const;
+export type UserRole = typeof USER_ROLES[number];
+
+// User accounts for authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  role: text("role").notNull().default("employer"),
+  workerId: varchar("worker_id"),
+  employerId: varchar("employer_id"),
+  createdAt: text("created_at").notNull().default(sql`now()`),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
-
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
