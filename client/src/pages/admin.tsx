@@ -46,7 +46,9 @@ export default function AdminDashboard() {
   const [jobToRate, setJobToRate] = useState<Job | null>(null);
   const [selectedRating, setSelectedRating] = useState(5);
   const [workerDocuments, setWorkerDocuments] = useState<string[]>([]);
+  const [workerPhoto, setWorkerPhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const { uploadFile, isUploading } = useUpload({
     onSuccess: (response) => {
@@ -57,6 +59,24 @@ export default function AdminDashboard() {
       toast({ title: t("common.error"), variant: "destructive" });
     },
   });
+
+  const { uploadFile: uploadPhoto, isUploading: isUploadingPhoto } = useUpload({
+    onSuccess: (response) => {
+      setWorkerPhoto(response.objectPath);
+      toast({ title: t("admin.photoUploaded") });
+    },
+    onError: () => {
+      toast({ title: t("common.error"), variant: "destructive" });
+    },
+  });
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadPhoto(file);
+      e.target.value = "";
+    }
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -229,7 +249,11 @@ export default function AdminDashboard() {
     if (!editingWorker) return;
     updateWorkerMutation.mutate({ 
       id: editingWorker.id, 
-      data: { ...editingWorker, documents: workerDocuments } 
+      data: { 
+        ...editingWorker, 
+        documents: workerDocuments,
+        photo: workerPhoto 
+      } 
     });
   };
 
@@ -355,7 +379,7 @@ export default function AdminDashboard() {
                   <Card key={worker.id} className="p-4" data-testid={`card-admin-worker-${worker.id}`}>
                     <div className="flex items-start gap-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={worker.photo || undefined} />
+                        <AvatarImage src={worker.photo ? `/objects/${worker.photo}` : undefined} />
                         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                           {worker.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                         </AvatarFallback>
@@ -422,6 +446,7 @@ export default function AdminDashboard() {
                           onClick={() => {
                             setEditingWorker(worker);
                             setWorkerDocuments(worker.documents || []);
+                            setWorkerPhoto(worker.photo || null);
                           }}
                           data-testid={`button-edit-worker-${worker.id}`}
                         >
@@ -711,6 +736,75 @@ export default function AdminDashboard() {
           </DialogHeader>
           {editingWorker && (
             <div className="space-y-4 py-4">
+              <div>
+                <Label>{t("admin.profilePhoto")}</Label>
+                <div className="flex items-center gap-4 mt-2">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={workerPhoto ? `/objects/${workerPhoto}` : undefined} />
+                    <AvatarFallback className="text-lg">
+                      {editingWorker.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="file"
+                      ref={photoInputRef}
+                      onChange={handlePhotoSelect}
+                      accept="image/*"
+                      className="hidden"
+                      data-testid="input-profile-photo"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={isUploadingPhoto}
+                      className="gap-1"
+                      data-testid="button-upload-photo"
+                    >
+                      {isUploadingPhoto ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      {t("admin.uploadPhoto")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.capture = 'user';
+                        input.onchange = (e) => handlePhotoSelect(e as any);
+                        input.click();
+                      }}
+                      disabled={isUploadingPhoto}
+                      className="gap-1"
+                      data-testid="button-camera-photo"
+                    >
+                      <Camera className="h-4 w-4" />
+                      {t("admin.takePhoto")}
+                    </Button>
+                    {workerPhoto && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setWorkerPhoto(null)}
+                        className="gap-1 text-destructive"
+                        data-testid="button-remove-photo"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        {t("admin.removePhoto")}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div>
                 <Label htmlFor="edit-name">{t("admin.workerName")}</Label>
                 <Input
