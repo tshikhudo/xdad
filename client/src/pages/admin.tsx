@@ -42,6 +42,8 @@ export default function AdminDashboard() {
     date: "",
     area: "",
   });
+  const [jobToRate, setJobToRate] = useState<Job | null>(null);
+  const [selectedRating, setSelectedRating] = useState(5);
 
   const { data: workers = [], isLoading: isLoadingWorkers } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
@@ -112,9 +114,17 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      setJobToRate(null);
+      setSelectedRating(5);
       toast({ title: t("common.success") });
     },
   });
+
+  const handleCompleteWithRating = () => {
+    if (jobToRate) {
+      completeJobMutation.mutate({ id: jobToRate.id, rating: selectedRating });
+    }
+  };
 
   const createJobMutation = useMutation({
     mutationFn: async (data: typeof newJob) => {
@@ -435,7 +445,10 @@ export default function AdminDashboard() {
                           </div>
                           <div className="mt-3 pt-3 border-t">
                             <div className="flex items-center gap-2">
-                              <Select onValueChange={(workerId) => assignWorkerMutation.mutate({ jobId: job.id, workerId })}>
+                              <Select 
+                                key={`assign-${job.id}-${job.workerId || 'none'}`}
+                                onValueChange={(workerId) => assignWorkerMutation.mutate({ jobId: job.id, workerId })}
+                              >
                                 <SelectTrigger data-testid={`select-assign-worker-${job.id}`} className="flex-1">
                                   <SelectValue placeholder={job.workerId ? t("admin.reassignWorker") : t("admin.assignWorker")} />
                                 </SelectTrigger>
@@ -450,7 +463,7 @@ export default function AdminDashboard() {
                               {job.workerId && job.status === "assigned" && (
                                 <Button
                                   size="sm"
-                                  onClick={() => completeJobMutation.mutate({ id: job.id, rating: 5 })}
+                                  onClick={() => setJobToRate(job)}
                                   disabled={completeJobMutation.isPending}
                                   data-testid={`button-complete-job-${job.id}`}
                                 >
@@ -823,6 +836,40 @@ export default function AdminDashboard() {
             <Button onClick={handleAddJob} disabled={createJobMutation.isPending} data-testid="button-submit-job">
               {createJobMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {t("admin.addJob")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!jobToRate} onOpenChange={(open) => !open && setJobToRate(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("admin.rateJob")}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">{t("admin.rateJobDesc")}</p>
+            <div className="flex justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <Button
+                  key={rating}
+                  variant={selectedRating >= rating ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setSelectedRating(rating)}
+                  data-testid={`button-rating-${rating}`}
+                >
+                  <Star className={`h-5 w-5 ${selectedRating >= rating ? "fill-current" : ""}`} />
+                </Button>
+              ))}
+            </div>
+            <p className="text-center mt-2 font-semibold">{selectedRating} / 5</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setJobToRate(null)}>
+              {t("book.back")}
+            </Button>
+            <Button onClick={handleCompleteWithRating} disabled={completeJobMutation.isPending} data-testid="button-confirm-complete">
+              {completeJobMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {t("admin.completeJob")}
             </Button>
           </DialogFooter>
         </DialogContent>
