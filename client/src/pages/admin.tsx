@@ -401,7 +401,7 @@ export default function AdminDashboard() {
                   <Card key={worker.id} className="p-4" data-testid={`card-admin-worker-${worker.id}`}>
                     <div className="flex items-start gap-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={worker.photo ? `/objects/${worker.photo}` : undefined} />
+                        <AvatarImage src={worker.photo ? (worker.photo.startsWith('/objects/') ? worker.photo : `/objects/${worker.photo}`) : undefined} />
                         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                           {worker.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                         </AvatarFallback>
