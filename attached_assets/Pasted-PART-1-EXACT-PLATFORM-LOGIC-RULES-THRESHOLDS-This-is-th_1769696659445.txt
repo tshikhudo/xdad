@@ -1,0 +1,341 @@
+PART 1: EXACT PLATFORM LOGIC (RULES & THRESHOLDS)
+
+This is the operating system of your business.
+
+A. USER ROLES (STRICT)
+1. Employer (payer)
+
+No public profile
+
+No visible ratings
+
+Only inputs: house size, date, time
+
+Must pay before workers are dispatched
+
+2. Worker (subscriber)
+
+Self-employed
+
+Pays subscription to access gigs
+
+Can accept / decline jobs
+
+Can rate employers (private, internal)
+
+3. Admin (you)
+
+Full visibility
+
+Can override house size
+
+Can suspend employers or workers
+
+Controls trust thresholds
+
+B. HOUSE SIZE RULES (ANTI-CHEAT)
+
+Employer must select ONE:
+
+Code	Label	Max scope
+S	Small	1–2 bed, 1 bath
+M	Medium	3 bed, 2 bath
+L	Large	4+ bed
+XL	Extra Large	Multi-floor / heavy
+Enforcement:
+
+Workers confirm actual size after job
+
+If mismatch → employer flagged
+
+C. EMPLOYER TRUST SCORE (INTERNAL ONLY)
+
+Range: 0–100
+Starts at: 80
+
+Deductions:
+
+House size mismatch: −15
+
+Worker reports disrespect: −10
+
+Job dispute: −20
+
+Late / failed payment: −30
+
+Improvements:
+
+5 smooth jobs in a row: +5
+
+High worker acceptance rate: +5
+
+D. EMPLOYER RISK TIERS (WHAT WORKERS SEE)
+Score	Tier	Worker label	System behavior
+80–100	Green	Reliable	Normal pricing
+50–79	Yellow	Caution	+10–20% price
+<50	Red	Restricted	Prepay only + limited workers
+
+🚫 Workers never see names, comments, or scores.
+
+E. WORKER RATING SYSTEM
+Employer → Worker (required, 3 sec)
+
+Star rating (1–5)
+
+Optional comment
+
+Worker → Employer (required, private)
+
+Checkboxes only:
+
+House size accurate? (Yes/No)
+
+Treated respectfully? (Yes/No)
+
+Payment smooth? (Yes/No)
+
+➡️ These feed the trust score only
+
+F. WORKER SUBSCRIPTION RULES
+
+Worker must have:
+
+Active subscription
+
+Verified ID + photo
+
+If subscription expires:
+
+No job notifications
+
+Profile hidden
+
+G. JOB MATCHING LOGIC (SCALABLE)
+
+Filter workers by:
+
+Availability
+
+Subscription active
+
+Skill match
+
+Sort by:
+
+Reliability score
+
+Last job date (fair rotation)
+
+Notify ONLY selected workers (cost control)
+
+H. PAYMENT RULES (NO FRICTION)
+
+Employer pays before workers are assigned
+
+No chat before payment
+
+No negotiation
+
+Price shown as ONE number
+
+I. DISPUTE HANDLING (MINIMAL HUMAN WORK)
+
+No in-chat arguments
+
+Admin reviews flags weekly
+
+System auto-adjusts pricing / access
+
+Repeat offenders quietly throttled
+
+This avoids customer support hell.
+
+PART 2: FULL REPLIT PROMPT (COPY–PASTE)
+
+Below is a production-grade Replit prompt.
+It enforces UX simplicity, scalability, and WhatsApp support.
+
+🔥 REPLIT PROMPT START
+
+Build a mobile-first web platform for the South African market that matches self-employed domestic workers to households using a subscription-based gig model.
+
+CORE PRINCIPLES
+
+Revenue first
+
+Zero clutter
+
+Big buttons
+
+Minimal steps
+
+No emotional or social friction
+
+Fully scalable with low admin overhead
+
+USER ROLES
+
+Employer (payer, no public profile)
+
+Worker (self-employed subscriber)
+
+Admin
+
+EMPLOYER FLOW (NO ACCOUNT REQUIRED)
+
+Select house size (Small, Medium, Large, XL)
+
+Select date & time
+
+See single total price
+
+Pay
+
+Booking confirmed
+
+No messaging before payment.
+
+WORKER FLOW (SUBSCRIBER)
+
+Upload ID + photo (admin verified)
+
+Toggle availability (ON/OFF)
+
+Receive job notifications
+
+Accept or decline jobs
+
+View job history & ratings
+
+Subscription status visible
+
+HOUSE SIZE ENFORCEMENT
+
+Each job requires house size selection
+
+Workers confirm actual size post-job
+
+Mismatches flag employer internally
+
+TRUST & RISK SYSTEM (INTERNAL)
+
+Employers have a hidden trust score (0–100)
+
+Workers see only tier labels:
+
+Reliable
+
+Caution
+
+Restricted
+
+System automatically adjusts pricing and access
+
+No public profiles or visible employer ratings.
+
+RATING SYSTEM
+
+Employer rates worker (stars, required)
+
+Worker rates employer (checkboxes, private)
+
+Ratings are blind until both submit
+
+Employer ratings are never shown publicly
+
+WORKER SUBSCRIPTIONS
+
+Active subscription required to receive jobs
+
+Expired subscription hides worker from matching
+
+JOB MATCHING
+
+Match only available, subscribed, verified workers
+
+Use fair rotation and reliability scoring
+
+Notify minimal workers to control messaging costs
+
+WHATSAPP INTEGRATION (WORKER ONLY)
+
+Add WhatsApp as an optional lightweight channel for workers to:
+
+Set availability (ON/OFF)
+
+Confirm or decline jobs
+
+Receive job reminders
+
+Update basic profile fields (language, skills)
+
+WhatsApp is NOT used for:
+
+Employer booking
+
+Negotiation
+
+Payments
+
+LANGUAGE SUPPORT
+
+Platform must support multiple languages
+
+All UI text must be switchable (i18n)
+
+Start with English + one local language
+
+Language switch must be one tap
+
+UX REQUIREMENTS
+
+Big buttons
+
+One-screen actions
+
+No long forms
+
+Mobile-first
+
+Works on low-end smartphones
+
+Fast load times
+
+ADMIN DASHBOARD
+
+Verify workers
+
+View employer risk tiers
+
+Override house sizes
+
+Suspend users
+
+View subscriptions
+
+Minimal manual intervention
+
+NON-GOALS (DO NOT BUILD)
+
+Employer profiles
+
+Public ratings
+
+Messaging before payment
+
+Social features
+
+Complex dashboards for users
+
+🔥 REPLIT PROMPT END
+FINAL FOUNDER NOTE (IMPORTANT)
+
+You’ve designed something rare:
+
+Workers feel protected → they stay subscribed
+
+Employers feel no friction → they keep paying
+
+You control behavior without confrontation
+
+System scales without adding staff

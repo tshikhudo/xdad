@@ -1,64 +1,82 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, Calendar, MapPin, Sparkles, Shirt, Flame, ChefHat, Baby, Heart, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, Check, Home, Sparkles, Flame, Shirt, Square, Calendar, Clock, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { WorkerCard } from "@/components/worker-card";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Worker, Job } from "@shared/schema";
-import { SERVICES, AREAS } from "@shared/schema";
+import { HOUSE_SIZES, TASKS, AVAILABILITY_WINDOWS, AREAS } from "@shared/schema";
+import type { PricingRule } from "@shared/schema";
 
-const serviceIcons: Record<string, typeof Sparkles> = {
-  cleaning: Sparkles,
-  laundry: Shirt,
+const taskIcons: Record<string, typeof Sparkles> = {
+  general_cleaning: Sparkles,
   ironing: Flame,
-  cooking: ChefHat,
-  childcare: Baby,
-  eldercare: Heart,
+  laundry: Shirt,
+  windows: Square,
+  deep_clean: Sparkles,
 };
 
-type BookingStep = "service" | "date" | "area" | "workers" | "confirm" | "success";
+type BookingStep = "houseSize" | "tasks" | "window" | "date" | "area" | "review" | "success";
 
 interface BookingState {
-  service: string;
+  houseSize: string;
+  tasks: string[];
+  availabilityWindow: string;
   date: string;
   area: string;
-  workerId: string;
 }
 
 export default function Book() {
   const { t } = useI18n();
   const { toast } = useToast();
-  const [step, setStep] = useState<BookingStep>("service");
+  const [step, setStep] = useState<BookingStep>("houseSize");
   const [booking, setBooking] = useState<BookingState>({
-    service: "",
+    houseSize: "",
+    tasks: [],
+    availabilityWindow: "",
     date: "",
     area: "",
-    workerId: "",
+  });
+  const [price, setPrice] = useState<number>(0);
+
+  // Fetch pricing rules from server
+  const { data: pricingRules } = useQuery<PricingRule>({
+    queryKey: ["/api/pricing"],
   });
 
-  const workersQueryUrl = booking.area && booking.service 
-    ? `/api/workers?area=${encodeURIComponent(booking.area)}&skill=${encodeURIComponent(booking.service)}`
-    : "/api/workers";
-
-  const { data: workers = [], isLoading: isLoadingWorkers } = useQuery<Worker[]>({
-    queryKey: [workersQueryUrl],
-    enabled: step === "workers" && !!booking.area && !!booking.service,
-  });
+  // Calculate price using server pricing rules when house size or tasks change
+  useEffect(() => {
+    const calculateServerPrice = async () => {
+      if (booking.houseSize && booking.tasks.length > 0) {
+        try {
+          const response = await apiRequest("POST", "/api/pricing/calculate", {
+            houseSize: booking.houseSize,
+            tasks: booking.tasks,
+          });
+          const data = await response.json();
+          setPrice(data.price);
+        } catch (error) {
+          console.error("Failed to calculate price:", error);
+        }
+      }
+    };
+    calculateServerPrice();
+  }, [booking.houseSize, booking.tasks]);
 
   const createJobMutation = useMutation({
-    mutationFn: async (data: { service: string; date: string; area: string; workerId: string }) => {
+    mutationFn: async () => {
+      // Price is calculated server-side, we don't send it
       return apiRequest("POST", "/api/jobs", {
-        employerId: "temp-employer",
-        workerId: data.workerId,
-        service: data.service,
-        date: data.date,
-        area: data.area,
-        status: "confirmed",
+        employerId: "temp-employer-" + Date.now(),
+        houseSize: booking.houseSize,
+        tasks: booking.tasks,
+        availabilityWindow: booking.availabilityWindow,
+        date: booking.date,
+        area: booking.area,
       });
     },
     onSuccess: () => {
@@ -73,45 +91,94 @@ export default function Book() {
     },
   });
 
-  const selectedWorker = workers.find((w) => w.id === booking.workerId);
-
   const dates = [
     { key: "today", label: t("common.today"), value: new Date().toISOString().split("T")[0] },
     { key: "tomorrow", label: t("common.tomorrow"), value: new Date(Date.now() + 86400000).toISOString().split("T")[0] },
     { key: "week", label: t("common.thisWeek"), value: new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0] },
   ];
 
+  const steps: BookingStep[] = ["houseSize", "tasks", "window", "date", "area", "review"];
+  const currentIndex = steps.indexOf(step);
+
+  const canProceed = () => {
+    switch (step) {
+      case "houseSize": return !!booking.houseSize;
+      case "tasks": return booking.tasks.length > 0;
+      case "window": return !!booking.availabilityWindow;
+      case "date": return !!booking.date;
+      case "area": return !!booking.area;
+      case "review": return true;
+      default: return false;
+    }
+  };
+
   const handleNext = () => {
-    const steps: BookingStep[] = ["service", "date", "area", "workers", "confirm"];
-    const currentIndex = steps.indexOf(step);
-    if (currentIndex < steps.length - 1) {
-      setStep(steps[currentIndex + 1]);
+    if (step === "review") {
+      createJobMutation.mutate();
+    } else {
+      const nextIndex = currentIndex + 1;
+      if (nextIndex < steps.length) {
+        setStep(steps[nextIndex]);
+      }
     }
   };
 
   const handleBack = () => {
-    const steps: BookingStep[] = ["service", "date", "area", "workers", "confirm"];
-    const currentIndex = steps.indexOf(step);
-    if (currentIndex > 0) {
-      setStep(steps[currentIndex - 1]);
+    const prevIndex = currentIndex - 1;
+    if (prevIndex >= 0) {
+      setStep(steps[prevIndex]);
     }
   };
 
-  const handleConfirm = () => {
-    createJobMutation.mutate(booking);
+  const toggleTask = (taskKey: string) => {
+    setBooking(prev => ({
+      ...prev,
+      tasks: prev.tasks.includes(taskKey)
+        ? prev.tasks.filter(t => t !== taskKey)
+        : [...prev.tasks, taskKey]
+    }));
   };
 
   if (step === "success") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center max-w-sm">
-          <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-            <Check className="h-10 w-10 text-primary" />
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="sticky top-0 z-50 bg-background border-b p-4 flex items-center justify-between">
+          <div className="w-10" />
+          <h1 className="text-lg font-semibold">{t("book.confirmed")}</h1>
+          <LanguageSwitcher />
+        </header>
+
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+            <Check className="w-10 h-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">{t("employer.bookingConfirmed")}</h1>
-          <p className="text-muted-foreground mb-8">{t("employer.workerWillContact")}</p>
+          <h2 className="text-2xl font-bold mb-2">{t("book.confirmed")}</h2>
+          <p className="text-muted-foreground mb-8 max-w-xs">{t("book.weWillHandle")}</p>
+          
+          <Card className="w-full max-w-sm p-4 mb-8">
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("book.houseSize")}</span>
+                <span className="font-medium">{t(`book.houseSize${booking.houseSize.charAt(0).toUpperCase() + booking.houseSize.slice(1)}`)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("book.selectTasks")}</span>
+                <span className="font-medium">{booking.tasks.length} tasks</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("book.selectDate")}</span>
+                <span className="font-medium">{booking.date}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2 mt-2">
+                <span className="font-semibold">{t("book.yourPrice")}</span>
+                <span className="font-bold text-primary text-lg">{t("common.rands")}{price}</span>
+              </div>
+            </div>
+          </Card>
+
           <Link href="/">
-            <Button size="lg" className="w-full" data-testid="button-back-home">
+            <Button size="lg" data-testid="button-go-home">
+              <Home className="w-5 h-5 mr-2" />
               {t("nav.home")}
             </Button>
           </Link>
@@ -121,70 +188,88 @@ export default function Book() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
-        <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto">
-          <div className="flex items-center gap-2">
-            {step !== "service" ? (
-              <Button variant="ghost" size="icon" onClick={handleBack} data-testid="button-back">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            ) : (
-              <Link href="/">
-                <Button variant="ghost" size="icon" data-testid="button-home">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-            )}
-            <span className="font-semibold">{t("employer.findWorker")}</span>
-          </div>
-          <LanguageSwitcher />
-        </div>
+    <div className="min-h-screen bg-background flex flex-col pb-24">
+      <header className="sticky top-0 z-50 bg-background border-b p-4 flex items-center justify-between">
+        <Link href="/">
+          <Button variant="ghost" size="icon" data-testid="button-back-home">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        </Link>
+        <h1 className="text-lg font-semibold">{t("nav.book")}</h1>
+        <LanguageSwitcher />
       </header>
 
-      {/* Progress */}
-      <div className="px-4 py-3 max-w-lg mx-auto">
-        <div className="flex gap-1">
-          {["service", "date", "area", "workers", "confirm"].map((s, i) => (
+      <div className="p-4">
+        <div className="flex gap-1 mb-6">
+          {steps.map((s, i) => (
             <div
               key={s}
-              className={`h-1.5 flex-1 rounded-full transition-colors ${
-                i <= ["service", "date", "area", "workers", "confirm"].indexOf(step)
-                  ? "bg-primary"
-                  : "bg-muted"
+              className={`h-2 flex-1 rounded-full transition-colors ${
+                i <= currentIndex ? "bg-primary" : "bg-muted"
               }`}
             />
           ))}
         </div>
-      </div>
 
-      {/* Content */}
-      <main className="px-4 py-4 max-w-lg mx-auto">
-        {/* Step 1: Service */}
-        {step === "service" && (
-          <div>
-            <h2 className="text-xl font-bold mb-6">{t("employer.selectService")}</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {SERVICES.map((service) => {
-                const Icon = serviceIcons[service] || Sparkles;
-                const isSelected = booking.service === service;
+        {step === "houseSize" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">{t("book.houseSize")}</h2>
+            <div className="grid gap-3">
+              {HOUSE_SIZES.map((size) => (
+                <Card
+                  key={size.key}
+                  data-testid={`card-housesize-${size.key}`}
+                  className={`p-6 cursor-pointer transition-all hover-elevate ${
+                    booking.houseSize === size.key
+                      ? "ring-2 ring-primary bg-primary/5"
+                      : ""
+                  }`}
+                  onClick={() => setBooking(prev => ({ ...prev, houseSize: size.key }))}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">
+                        {t(`book.houseSize${size.key.charAt(0).toUpperCase() + size.key.slice(1)}`)}
+                      </h3>
+                      <p className="text-muted-foreground">{size.bedrooms} {t("book.bedrooms")}</p>
+                    </div>
+                    {booking.houseSize === size.key && (
+                      <Check className="w-6 h-6 text-primary" />
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === "tasks" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">{t("book.selectTasks")}</h2>
+            <p className="text-muted-foreground text-sm">Select all that apply</p>
+            <div className="grid gap-3">
+              {TASKS.map((task) => {
+                const Icon = taskIcons[task.key] || Sparkles;
+                const isSelected = booking.tasks.includes(task.key);
                 return (
                   <Card
-                    key={service}
-                    className={`p-4 cursor-pointer hover-elevate active-elevate-2 ${
+                    key={task.key}
+                    data-testid={`card-task-${task.key}`}
+                    className={`p-4 cursor-pointer transition-all hover-elevate ${
                       isSelected ? "ring-2 ring-primary bg-primary/5" : ""
                     }`}
-                    onClick={() => setBooking((prev) => ({ ...prev, service }))}
-                    data-testid={`card-service-${service}`}
+                    onClick={() => toggleTask(task.key)}
                   >
-                    <div className="flex flex-col items-center text-center gap-2">
-                      <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                        isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
-                      }`}>
-                        <Icon className="h-6 w-6" />
+                    <div className="flex items-center gap-4">
+                      <Checkbox 
+                        checked={isSelected} 
+                        onCheckedChange={() => toggleTask(task.key)}
+                        className="pointer-events-none"
+                      />
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Icon className="w-6 h-6 text-primary" />
                       </div>
-                      <span className="font-medium">{t(`skill.${service}`)}</span>
+                      <span className="font-medium">{t(`task.${task.key}`)}</span>
                     </div>
                   </Card>
                 );
@@ -193,170 +278,191 @@ export default function Book() {
           </div>
         )}
 
-        {/* Step 2: Date */}
+        {step === "window" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">{t("book.selectWindow")}</h2>
+            <div className="grid gap-3">
+              {AVAILABILITY_WINDOWS.map((window) => (
+                <Card
+                  key={window.key}
+                  data-testid={`card-window-${window.key}`}
+                  className={`p-5 cursor-pointer transition-all hover-elevate ${
+                    booking.availabilityWindow === window.key
+                      ? "ring-2 ring-primary bg-primary/5"
+                      : ""
+                  }`}
+                  onClick={() => setBooking(prev => ({ ...prev, availabilityWindow: window.key }))}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Clock className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{t(`window.${window.key}`)}</h3>
+                        <p className="text-sm text-muted-foreground">{t(`window.${window.key}Desc`)}</p>
+                      </div>
+                    </div>
+                    {booking.availabilityWindow === window.key && (
+                      <Check className="w-6 h-6 text-primary" />
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
         {step === "date" && (
-          <div>
-            <h2 className="text-xl font-bold mb-6">{t("employer.selectDate")}</h2>
-            <div className="space-y-3">
-              {dates.map((date) => {
-                const isSelected = booking.date === date.value;
-                return (
-                  <Card
-                    key={date.key}
-                    className={`p-4 cursor-pointer hover-elevate active-elevate-2 ${
-                      isSelected ? "ring-2 ring-primary bg-primary/5" : ""
-                    }`}
-                    onClick={() => setBooking((prev) => ({ ...prev, date: date.value }))}
-                    data-testid={`card-date-${date.key}`}
-                  >
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">{t("book.selectDate")}</h2>
+            <div className="grid gap-3">
+              {dates.map((date) => (
+                <Card
+                  key={date.key}
+                  data-testid={`card-date-${date.key}`}
+                  className={`p-5 cursor-pointer transition-all hover-elevate ${
+                    booking.date === date.value
+                      ? "ring-2 ring-primary bg-primary/5"
+                      : ""
+                  }`}
+                  onClick={() => setBooking(prev => ({ ...prev, date: date.value }))}
+                >
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                        isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
-                      }`}>
-                        <Calendar className="h-6 w-6" />
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Calendar className="w-6 h-6 text-primary" />
                       </div>
-                      <span className="font-medium text-lg">{date.label}</span>
+                      <div>
+                        <h3 className="font-semibold">{date.label}</h3>
+                        <p className="text-sm text-muted-foreground">{date.value}</p>
+                      </div>
                     </div>
-                  </Card>
-                );
-              })}
+                    {booking.date === date.value && (
+                      <Check className="w-6 h-6 text-primary" />
+                    )}
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Step 3: Area */}
         {step === "area" && (
-          <div>
-            <h2 className="text-xl font-bold mb-6">{t("employer.selectArea")}</h2>
-            <div className="space-y-3">
-              {AREAS.map((area) => {
-                const isSelected = booking.area === area;
-                return (
-                  <Card
-                    key={area}
-                    className={`p-4 cursor-pointer hover-elevate active-elevate-2 ${
-                      isSelected ? "ring-2 ring-primary bg-primary/5" : ""
-                    }`}
-                    onClick={() => setBooking((prev) => ({ ...prev, area }))}
-                    data-testid={`card-area-${area.replace(/\s/g, "-")}`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                        isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
-                      }`}>
-                        <MapPin className="h-5 w-5" />
-                      </div>
-                      <span className="font-medium">{area}</span>
-                    </div>
-                  </Card>
-                );
-              })}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">{t("worker.area")}</h2>
+            <div className="grid gap-3">
+              {AREAS.map((area) => (
+                <Card
+                  key={area}
+                  data-testid={`card-area-${area.replace(/\s+/g, "-")}`}
+                  className={`p-5 cursor-pointer transition-all hover-elevate ${
+                    booking.area === area
+                      ? "ring-2 ring-primary bg-primary/5"
+                      : ""
+                  }`}
+                  onClick={() => setBooking(prev => ({ ...prev, area }))}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{area}</span>
+                    {booking.area === area && (
+                      <Check className="w-6 h-6 text-primary" />
+                    )}
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Step 4: Workers */}
-        {step === "workers" && (
-          <div>
-            <h2 className="text-xl font-bold mb-6">{t("employer.selectWorker")}</h2>
-            {isLoadingWorkers ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : workers.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">{t("employer.noWorkersFound")}</p>
-                <Button variant="outline" onClick={handleBack}>
-                  {t("employer.tryDifferentArea")}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {workers.slice(0, 3).map((worker) => (
-                  <WorkerCard
-                    key={worker.id}
-                    worker={worker}
-                    selected={booking.workerId === worker.id}
-                    onClick={() => setBooking((prev) => ({ ...prev, workerId: worker.id }))}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 5: Confirm */}
-        {step === "confirm" && selectedWorker && (
-          <div>
-            <h2 className="text-xl font-bold mb-6">{t("employer.confirmBooking")}</h2>
+        {step === "review" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">{t("book.reviewPay")}</h2>
             
-            <Card className="p-4 mb-4">
-              <h3 className="font-semibold mb-3">Booking Details</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Service</span>
-                  <span className="font-medium">{t(`skill.${booking.service}`)}</span>
+            <Card className="p-5">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b">
+                  <span className="text-muted-foreground">{t("book.houseSize")}</span>
+                  <span className="font-medium">
+                    {t(`book.houseSize${booking.houseSize.charAt(0).toUpperCase() + booking.houseSize.slice(1)}`)}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date</span>
-                  <span className="font-medium">{new Date(booking.date).toLocaleDateString()}</span>
+                
+                <div className="pb-3 border-b">
+                  <span className="text-muted-foreground block mb-2">{t("book.selectTasks")}</span>
+                  <div className="flex flex-wrap gap-2">
+                    {booking.tasks.map(task => (
+                      <span key={task} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                        {t(`task.${task}`)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Area</span>
+
+                <div className="flex justify-between items-center pb-3 border-b">
+                  <span className="text-muted-foreground">{t("book.selectWindow")}</span>
+                  <span className="font-medium">{t(`window.${booking.availabilityWindow}`)}</span>
+                </div>
+
+                <div className="flex justify-between items-center pb-3 border-b">
+                  <span className="text-muted-foreground">{t("book.selectDate")}</span>
+                  <span className="font-medium">{booking.date}</span>
+                </div>
+
+                <div className="flex justify-between items-center pb-3 border-b">
+                  <span className="text-muted-foreground">{t("worker.area")}</span>
                   <span className="font-medium">{booking.area}</span>
+                </div>
+
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-lg font-bold">{t("book.yourPrice")}</span>
+                  <span className="text-2xl font-bold text-primary">{t("common.rands")}{price}</span>
                 </div>
               </div>
             </Card>
 
-            <div className="mb-4">
-              <h3 className="font-semibold mb-3">Selected Worker</h3>
-              <WorkerCard worker={selectedWorker} compact />
-            </div>
+            <p className="text-center text-sm text-muted-foreground px-4">
+              {t("book.weWillHandle")}
+            </p>
           </div>
         )}
-      </main>
+      </div>
 
-      {/* Bottom Action */}
-      {step !== "success" && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
-          <div className="max-w-lg mx-auto">
-            {step === "confirm" ? (
-              <Button
-                size="lg"
-                className="w-full h-14 text-lg"
-                onClick={handleConfirm}
-                disabled={createJobMutation.isPending}
-                data-testid="button-confirm"
-              >
-                {createJobMutation.isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <>
-                    {t("employer.confirm")}
-                    <Check className="h-5 w-5 ml-2" />
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Button
-                size="lg"
-                className="w-full h-14 text-lg"
-                onClick={handleNext}
-                disabled={
-                  (step === "service" && !booking.service) ||
-                  (step === "date" && !booking.date) ||
-                  (step === "area" && !booking.area) ||
-                  (step === "workers" && !booking.workerId)
-                }
-                data-testid="button-next"
-              >
-                {t("employer.next")}
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex gap-3 safe-area-inset-bottom">
+        {currentIndex > 0 && (
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex-1"
+            onClick={handleBack}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            {t("book.back")}
+          </Button>
+        )}
+        <Button
+          size="lg"
+          className="flex-1"
+          disabled={!canProceed() || createJobMutation.isPending}
+          onClick={handleNext}
+          data-testid={step === "review" ? "button-pay" : "button-next"}
+        >
+          {createJobMutation.isPending ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : step === "review" ? (
+            <>
+              {t("book.payNow")}
+              <Check className="w-5 h-5 ml-2" />
+            </>
+          ) : (
+            <>
+              {t("book.next")}
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

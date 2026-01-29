@@ -1,0 +1,317 @@
+Scope-Based, Uber-Style Worker Platform (Web + WhatsApp)
+🎯 Objective
+
+Build a mobile-first platform that connects households to verified cleaners/workers using scope-based pricing, not time-based pricing.
+
+The platform must feel:
+
+Extremely simple
+
+Trustworthy
+
+Fast
+
+Local-language friendly
+
+Zero clutter
+
+The platform owner (admin) fully controls pricing, job execution, and worker allocation, similar to Uber.
+
+🧠 CORE PHILOSOPHY (DO NOT BREAK THESE RULES)
+
+❌ Employers NEVER choose job duration or hours
+
+❌ Employers NEVER choose number of workers
+
+❌ Employers NEVER negotiate pricing
+
+✅ Employers only choose:
+
+House size
+
+Tasks needed
+
+Availability window
+
+Date
+
+All pricing is scope-based and fixed upfront.
+
+👥 USER TYPES
+1️⃣ Employer (Household / Client)
+
+Wants cleaning/work done
+
+Pays the platform
+
+Minimal decisions
+
+2️⃣ Worker (Cleaner / Labourer)
+
+Self-employed (NOT employees)
+
+Receives gigs via app + WhatsApp
+
+Subscribes to platform for access to jobs
+
+3️⃣ Admin (Platform Owner)
+
+Controls pricing logic
+
+Controls worker routing
+
+Controls trust & verification
+
+Controls dispute resolution
+
+🧱 EMPLOYER FLOW (EXTREMELY SIMPLE UX)
+Step 1: Select House Size
+
+Examples:
+
+Small (1–2 bedrooms)
+
+Medium (3 bedrooms)
+
+Large (4+ bedrooms)
+
+Custom (admin-defined)
+
+Step 2: Select Tasks (checkboxes)
+
+General cleaning
+
+Ironing
+
+Laundry
+
+Windows
+
+Deep clean
+
+Each task adds complexity weight, not time.
+
+Step 3: Select Availability Window
+
+Examples:
+
+Anytime (8am–4pm)
+
+Morning only
+
+Afternoon only
+
+⚠️ Availability is ONLY a routing constraint, NOT pricing input.
+
+Step 4: Select Date
+
+Calendar picker
+
+Step 5: See Fixed Price & Pay
+
+One clear price
+
+No breakdown
+
+No worker count shown
+
+💰 PRICING LOGIC (SCOPE-BASED)
+
+Pricing is calculated internally using:
+
+House size weight
+
+Task complexity weight
+
+Optional add-ons
+
+❌ Time is NOT part of pricing
+❌ Duration is NOT visible to employer
+
+Employer sees:
+
+“Total price: R___”
+
+🧠 INTERNAL JOB EXECUTION LOGIC (ADMIN-ONLY)
+
+The system must allow admin to decide:
+
+Number of workers sent
+
+Whether workers:
+
+Stay all day at one house
+
+Rotate across houses
+
+Whether job is:
+
+Managed by platform
+
+Direct worker-to-employer (marketplace mode)
+
+Whether platform detergents are used
+
+This logic is never shown to employers.
+
+🧑‍🔧 WORKER FLOW (APP + WHATSAPP)
+
+Workers can use:
+
+Web app
+
+WhatsApp chatbot (mandatory)
+
+Worker abilities:
+
+Set availability
+
+Accept / decline jobs
+
+Update job status
+
+Edit profile info
+
+Upload work photos (before/after)
+
+Job notification example:
+
+🏠 Medium house
+🧹 Cleaning + ironing
+📅 Today
+🕗 Within 8am–4pm
+💰 R___ payout
+⭐ Employer reliability score
+
+Buttons:
+
+Accept
+
+Decline
+
+🔁 HYBRID MODEL (CRITICAL)
+
+The platform MUST support:
+
+Employer Mode (Invisible to Employer)
+
+Managed mode: Platform controls everything
+
+Direct mode: Worker stays all day, platform only facilitates
+
+Employer never chooses the mode.
+
+Worker Hybrid Ability
+
+Some workers:
+
+Only marketplace
+
+Only managed
+
+Both
+
+Admin controls matching logic.
+
+⭐ RATINGS & TRUST SYSTEM
+Worker Ratings (Visible)
+
+Employers rate workers after job
+
+Affects worker job priority
+
+Employer Reliability Score (Hidden Profile)
+
+Workers can rate employers
+
+Employers DO NOT see worker profiles
+
+Workers see only a reliability badge (Low / Medium / High)
+
+This prevents abuse without adding friction.
+
+📸 TRUST & PROOF MECHANISMS
+
+Worker verification status
+
+Before/after job photos
+
+Completed job count
+
+Consistency score
+
+Subscription status badge
+
+Trust is shown visually, not via text.
+
+🌍 LANGUAGE & ACCESSIBILITY (MANDATORY)
+
+Full multilingual support
+
+ALL text must be switchable dynamically
+
+Default to local language first
+
+Simple wording (Grade 6 level)
+
+🎨 UX PRINCIPLES (NON-NEGOTIABLE)
+
+Big buttons
+
+One action per screen
+
+No paragraphs
+
+No clutter
+
+Mobile-first
+
+Fast load
+
+Clear confirmations
+
+🔐 PAYMENTS
+
+Employers pay platform upfront
+
+Workers are paid per job or per batch
+
+Workers subscribe to access jobs
+
+🛠️ TECH REQUIREMENTS
+
+Mobile-first responsive UI
+
+Admin dashboard for:
+
+Pricing rules
+
+Task weights
+
+Worker allocation
+
+Disputes
+
+WhatsApp integration for workers
+
+Clean, modular codebase
+
+🚫 EXPLICITLY DO NOT BUILD
+
+Hour selection
+
+Time tracking UI
+
+Employer-worker chat
+
+Negotiation features
+
+Visible worker selection
+
+🎯 FINAL GOAL
+
+This platform should feel like:
+
+“I select my house, pick what I need, pay — and it’s handled.”
+
+The admin silently optimizes labour and margins behind the scenes.
