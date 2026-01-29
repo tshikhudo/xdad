@@ -85,8 +85,13 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   // Setup Replit Auth (Google login) - must be before other routes
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  try {
+    await setupAuth(app);
+    registerAuthRoutes(app);
+  } catch (err) {
+    console.error("Failed to setup Replit Auth:", err);
+    // Continue without Google login - username/password login still works
+  }
   
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);

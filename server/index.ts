@@ -60,7 +60,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await registerRoutes(httpServer, app);
+  try {
+    await registerRoutes(httpServer, app);
+  } catch (err) {
+    console.error("Failed to register routes:", err);
+    // Continue without crashing - some routes may still work
+  }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
