@@ -433,35 +433,38 @@ export default function AdminDashboard() {
                               </Badge>
                             </div>
                           </div>
-                          {!job.workerId && (
-                            <div className="mt-3 pt-3 border-t">
+                          <div className="mt-3 pt-3 border-t">
+                            <div className="flex items-center gap-2">
                               <Select onValueChange={(workerId) => assignWorkerMutation.mutate({ jobId: job.id, workerId })}>
-                                <SelectTrigger data-testid={`select-assign-worker-${job.id}`}>
-                                  <SelectValue placeholder={t("admin.assignWorker")} />
+                                <SelectTrigger data-testid={`select-assign-worker-${job.id}`} className="flex-1">
+                                  <SelectValue placeholder={job.workerId ? t("admin.reassignWorker") : t("admin.assignWorker")} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {workers.filter(w => w.isAvailable).map((worker) => (
+                                  {workers.filter(w => w.isAvailable && w.id !== job.workerId).map((worker) => (
                                     <SelectItem key={worker.id} value={worker.id}>
                                       {worker.name} - {worker.area}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
+                              {job.workerId && job.status === "assigned" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => completeJobMutation.mutate({ id: job.id, rating: 5 })}
+                                  disabled={completeJobMutation.isPending}
+                                  data-testid={`button-complete-job-${job.id}`}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  {t("admin.completeJob")}
+                                </Button>
+                              )}
                             </div>
-                          )}
-                          {job.workerId && job.status === "assigned" && (
-                            <div className="mt-3 pt-3 border-t flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => completeJobMutation.mutate({ id: job.id, rating: 5 })}
-                                disabled={completeJobMutation.isPending}
-                                data-testid={`button-complete-job-${job.id}`}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                {t("admin.completeJob")}
-                              </Button>
-                            </div>
-                          )}
+                            {job.workerId && (
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {t("admin.currentWorker")}: {workers.find(w => w.id === job.workerId)?.name || job.workerId}
+                              </p>
+                            )}
+                          </div>
                         </Card>
                       ))}
                     </div>
