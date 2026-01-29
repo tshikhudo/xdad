@@ -1,0 +1,221 @@
+✅ FULL REPLIT BUILD PROMPT
+
+Build a mobile-first web platform (PWA-ready) for matching informal workers (starting with domestic cleaners) to employers in South Africa. The platform must be one unified system, money-focused, and designed for low digital literacy. Follow UX, trust, and multilingual requirements strictly.
+
+1️⃣ CORE GOALS
+
+Reduce street-corner hiring chaos
+
+Increase safety and dignity for workers and employers
+
+Enable fast, reliable, and trusted hiring
+
+Build proof, trust, and consistency into worker profiles
+
+Scale without per-message costs killing margins
+
+2️⃣ UX PRINCIPLES (MANDATORY)
+
+Extreme simplicity, 30-second comprehension
+
+Big buttons, clear actions only
+
+Zero clutter — remove unnecessary text/UI elements
+
+Mobile-first, low-end Android compatible
+
+Minimal data usage
+
+Calm, trustworthy design — respectful tone
+
+Only features that directly support trust, speed, or revenue
+
+3️⃣ LANGUAGE & LOCALISATION
+
+Fully switchable, multi-language support
+
+Languages at launch: English, isiZulu, Sesotho, Afrikaans
+
+Use proper i18n system; no hardcoded strings
+
+Language switcher always visible, one tap, icon + name
+
+User preference persists across sessions
+
+100% of visible text must be translatable
+
+4️⃣ USER TYPES
+
+Workers (Primary: Domestic cleaners)
+
+Employers (Households)
+
+Admin (Platform operator)
+
+5️⃣ WORKER EXPERIENCE (PASSIVE)
+
+Workers do not need complex interaction:
+
+Worker can:
+
+View profile
+
+View job history
+
+See rating ⭐
+
+Toggle availability (ON/OFF)
+
+See rules / expectations
+
+Worker profile must include:
+
+Photo
+
+Name
+
+Area
+
+Skills (icons)
+
+Jobs completed
+
+Ratings
+
+Verification badge
+
+Optional proof photos from completed jobs
+
+Notification: Workers receive job alerts via SMS / WhatsApp, not inside platform
+
+6️⃣ EMPLOYER EXPERIENCE (ACTIVE)
+
+Employers must feel safe, in control, and calm:
+
+Employer can:
+
+Request worker(s)
+
+View 2–3 matched profiles
+
+Compare profiles easily
+
+Select worker
+
+Confirm job
+
+Rate after job
+
+Employer flow:
+
+Choose service
+
+Choose date
+
+Choose area
+
+View worker options
+
+Select
+
+Confirm
+
+No long lists, always small curated choices.
+
+7️⃣ ADMIN EXPERIENCE
+
+Admin dashboard must allow:
+
+Create / edit worker profiles
+
+Verify workers (ID, skills, photos)
+
+Track job completion
+
+Match workers to jobs
+
+Log attendance
+
+Add ratings
+
+Deactivate workers
+
+8️⃣ TRUST, PROOF, AND CONSISTENCY
+
+Workers must be verified with ID check → verified badge
+
+Workers must have job history logged with ratings
+
+Workers have photos and optional proof photos
+
+Admin confirms job completion → updates Jobs Completed + rating
+
+Replacement guarantee to ensure employers always get a worker
+
+Workers submit daily “AVAILABLE” check-in to reduce notifications cost
+
+9️⃣ TECHNICAL REQUIREMENTS
+
+Mobile web app, PWA-ready
+
+One platform, no WhatsApp as core
+
+Authentication via phone number / OTP, simple login
+
+Clear separation: UI, business logic, language files
+
+Easy to extend in future (notifications, payments, push)
+
+Responsive on low-end phones
+
+10️⃣ CHANNEL / NOTIFICATION RULES
+
+Use SMS for general broadcasts / availability check-ins (low cost)
+
+Use WhatsApp utility messages only for targeted alerts (high-value jobs)
+
+Never send paid WhatsApp messages to silent workers
+
+Track preferred notification channel per worker (SMS / WhatsApp)
+
+11️⃣ WHAT TO EXCLUDE
+
+In-app chat / messaging
+
+Social feeds or gamification
+
+AI features or recommendation engines
+
+Complex dashboards beyond admin needs
+
+Advertising
+
+12️⃣ SUCCESS METRICS
+
+The platform is successful if:
+
+Worker understands profile in <30 seconds
+
+Employer can book in <1 minute
+
+Works on cheap phones
+
+Scales without redesign
+
+Reduces street-corner chaos and builds trust
+
+13️⃣ DELIVERABLES
+
+Build the MVP platform with:
+
+Worker profile page (photo, skills, jobs completed, rating, verified badge)
+
+Employer booking flow (small curated options, selection, confirmation)
+
+Admin dashboard (verify, log jobs, match, ratings)
+
+Multilingual support system (switchable language)
+
+Clean, minimal mobile-first UI
+
+If any feature conflicts with UX simplicity, remove it. Default to less, not more.
