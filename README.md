@@ -4,12 +4,14 @@
 
 Use these accounts to explore the app:
 
-| Role | Username | Password |
-|------|----------|----------|
-| Admin | `pfunzo1` | `Password.1` |
-| Admin | `Ray1` | `Password.1` |
+| Role | Username | Password | What you can do |
+|------|----------|----------|-----------------|
+| Admin | `pfunzo1` | `Password.1` | Manage workers, jobs, pricing |
+| Admin | `Ray1` | `Password.1` | Manage workers, jobs, pricing |
+| Employer | `test_employer` | `Test.1234` | Book a cleaning job |
+| Worker | `test_worker` | `Test.1234` | View job profile |
 
-> **Employer / Worker** — You can also create your own account by clicking **Login → Sign Up** and choosing a role.
+> You can also create your own account — click **Login → Sign Up** and choose a role.
 
 ---
 
