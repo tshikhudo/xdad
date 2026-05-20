@@ -1,5 +1,18 @@
 # Febreeze Clean - Domestic Worker Platform
 
+## Test Users
+
+Use these accounts to explore the app:
+
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | `pfunzo1` | `Password.1` |
+| Admin | `Ray1` | `Password.1` |
+
+> **Employer / Worker** — You can also create your own account by clicking **Login → Sign Up** and choosing a role.
+
+---
+
 ## Overview
 
 Febreeze Clean is a mobile-first Progressive Web App (PWA) designed to connect informal domestic workers (primarily cleaners) with employers in South Africa. The platform focuses on trust, safety, and dignity for both workers and employers, aiming to replace informal street-corner hiring with a reliable, verified system.
